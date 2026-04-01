@@ -1,0 +1,13 @@
+backend/node_modules/
+ml-service/.venv/
+__pycache__/
+*.pyc
+
+backend/.env
+ml-service/.env
+
+.DS_Store
+*.log
+
+DEVTrails_2026_Rulebook.pdf:Zone.Identifier
+DEVTrails_2026_Usecase_Document.pdf:Zone.Identifier

@@ -1,0 +1,52 @@
+[
+  {
+    "id": "koramangala",
+    "name": "Koramangala",
+    "pin": "560034",
+    "risk_class": "medium",
+    "lat": 12.9352,
+    "lng": 77.6245,
+    "avg_lunch_earnings": 420,
+    "avg_dinner_earnings": 680
+  },
+  {
+    "id": "indiranagar",
+    "name": "Indiranagar",
+    "pin": "560038",
+    "risk_class": "low",
+    "lat": 12.9784,
+    "lng": 77.6408,
+    "avg_lunch_earnings": 450,
+    "avg_dinner_earnings": 720
+  },
+  {
+    "id": "hsr_layout",
+    "name": "HSR Layout",
+    "pin": "560102",
+    "risk_class": "medium",
+    "lat": 12.9116,
+    "lng": 77.6474,
+    "avg_lunch_earnings": 380,
+    "avg_dinner_earnings": 620
+  },
+  {
+    "id": "whitefield",
+    "name": "Whitefield",
+    "pin": "560066",
+    "risk_class": "high",
+    "lat": 12.9698,
+    "lng": 77.75,
+    "avg_lunch_earnings": 350,
+    "avg_dinner_earnings": 580
+  },
+  {
+    "id": "electronic_city",
+    "name": "Electronic City",
+    "pin": "560100",
+    "risk_class": "high",
+    "lat": 12.8399,
+    "lng": 77.677,
+    "avg_lunch_earnings": 330,
+    "avg_dinner_earnings": 560
+  }
+]
