@@ -1135,6 +1135,601 @@
       },
       "valid_until": "2026-04-05T23:59:00+05:30",
       "created_at": "2026-04-01T04:49:13.932Z"
+    },
+    {
+      "id": "9b52e9c7-8263-49e4-ae1c-140009e7e6ef",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.52,
+      "risk_band": "medium",
+      "premium": 58,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "AQI forecast",
+            "contribution_pct": 47,
+            "detail": "2 days predicted AQI above 280"
+          },
+          {
+            "factor": "Rain probability",
+            "contribution_pct": 31,
+            "detail": "1 days forecast above 15mm rain"
+          }
+        ],
+        "summary": "Medium risk this week. 2 days predicted AQI above 280."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T05:24:43.450Z"
+    },
+    {
+      "id": "44c9ff9d-fce5-4b7a-b5b3-e0e965384989",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.61,
+      "risk_band": "medium",
+      "premium": 64,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "Historical triggers",
+            "contribution_pct": 100,
+            "detail": "1 triggers in the last 4 weeks"
+          }
+        ],
+        "summary": "Medium risk this week. 1 triggers in the last 4 weeks."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T05:24:43.454Z"
+    },
+    {
+      "id": "2f9b505d-0ed3-4d6c-b274-90fe169aa117",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.44,
+      "risk_band": "medium",
+      "premium": 51,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "Rain probability",
+            "contribution_pct": 100,
+            "detail": "1 days forecast above 15mm rain"
+          }
+        ],
+        "summary": "Medium risk this week. 1 days forecast above 15mm rain."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T05:24:43.457Z"
+    },
+    {
+      "id": "f9ceda33-a7aa-46f9-93af-20baada0e228",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.52,
+      "risk_band": "medium",
+      "premium": 58,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "AQI forecast",
+            "contribution_pct": 47,
+            "detail": "2 days predicted AQI above 280"
+          },
+          {
+            "factor": "Rain probability",
+            "contribution_pct": 31,
+            "detail": "1 days forecast above 15mm rain"
+          }
+        ],
+        "summary": "Medium risk this week. 2 days predicted AQI above 280."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T05:25:14.872Z"
+    },
+    {
+      "id": "3a495119-76f4-4af2-96c9-e3d06c29b56e",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.61,
+      "risk_band": "medium",
+      "premium": 64,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "Historical triggers",
+            "contribution_pct": 100,
+            "detail": "1 triggers in the last 4 weeks"
+          }
+        ],
+        "summary": "Medium risk this week. 1 triggers in the last 4 weeks."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T05:25:14.877Z"
+    },
+    {
+      "id": "788fdbb0-efaf-4a3c-b8b8-c29f90deb18f",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.44,
+      "risk_band": "medium",
+      "premium": 51,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "Rain probability",
+            "contribution_pct": 100,
+            "detail": "1 days forecast above 15mm rain"
+          }
+        ],
+        "summary": "Medium risk this week. 1 days forecast above 15mm rain."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T05:25:14.880Z"
+    },
+    {
+      "id": "c0cc73f2-c2c2-402c-be5b-e81a3d5ad589",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.52,
+      "risk_band": "medium",
+      "premium": 58,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "AQI forecast",
+            "contribution_pct": 47,
+            "detail": "2 days predicted AQI above 280"
+          },
+          {
+            "factor": "Rain probability",
+            "contribution_pct": 31,
+            "detail": "1 days forecast above 15mm rain"
+          }
+        ],
+        "summary": "Medium risk this week. 2 days predicted AQI above 280."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T05:38:03.471Z"
+    },
+    {
+      "id": "9dd5b35e-6467-4aad-aacd-b16ac2ef9438",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.61,
+      "risk_band": "medium",
+      "premium": 64,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "Historical triggers",
+            "contribution_pct": 100,
+            "detail": "1 triggers in the last 4 weeks"
+          }
+        ],
+        "summary": "Medium risk this week. 1 triggers in the last 4 weeks."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T05:38:03.477Z"
+    },
+    {
+      "id": "1e79e63d-ac2c-4570-b280-9636a0b7893b",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.44,
+      "risk_band": "medium",
+      "premium": 51,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "Rain probability",
+            "contribution_pct": 100,
+            "detail": "1 days forecast above 15mm rain"
+          }
+        ],
+        "summary": "Medium risk this week. 1 days forecast above 15mm rain."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T05:38:03.481Z"
+    },
+    {
+      "id": "efe8b22b-73c0-4644-8f2d-bcdfb752706e",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.52,
+      "risk_band": "medium",
+      "premium": 58,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "AQI forecast",
+            "contribution_pct": 47,
+            "detail": "2 days predicted AQI above 280"
+          },
+          {
+            "factor": "Rain probability",
+            "contribution_pct": 31,
+            "detail": "1 days forecast above 15mm rain"
+          }
+        ],
+        "summary": "Medium risk this week. 2 days predicted AQI above 280."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T11:13:06.947Z"
+    },
+    {
+      "id": "1d038446-a739-4f7a-88b6-c715210e7828",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.61,
+      "risk_band": "medium",
+      "premium": 64,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "Historical triggers",
+            "contribution_pct": 100,
+            "detail": "1 triggers in the last 4 weeks"
+          }
+        ],
+        "summary": "Medium risk this week. 1 triggers in the last 4 weeks."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T11:13:06.951Z"
+    },
+    {
+      "id": "b964d31c-da24-4fdd-aa0a-5ecf5f792a46",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.44,
+      "risk_band": "medium",
+      "premium": 51,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "Rain probability",
+            "contribution_pct": 100,
+            "detail": "1 days forecast above 15mm rain"
+          }
+        ],
+        "summary": "Medium risk this week. 1 days forecast above 15mm rain."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T11:13:06.954Z"
+    },
+    {
+      "id": "7d5e9d94-fc94-4b89-95fe-a3ee6df2b5f6",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.52,
+      "risk_band": "medium",
+      "premium": 58,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "AQI forecast",
+            "contribution_pct": 47,
+            "detail": "2 days predicted AQI above 280"
+          },
+          {
+            "factor": "Rain probability",
+            "contribution_pct": 31,
+            "detail": "1 days forecast above 15mm rain"
+          }
+        ],
+        "summary": "Medium risk this week. 2 days predicted AQI above 280."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T11:26:03.576Z"
+    },
+    {
+      "id": "39f0bc7a-2179-4029-aa34-119e465565bc",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.61,
+      "risk_band": "medium",
+      "premium": 64,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "Historical triggers",
+            "contribution_pct": 100,
+            "detail": "1 triggers in the last 4 weeks"
+          }
+        ],
+        "summary": "Medium risk this week. 1 triggers in the last 4 weeks."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T11:26:03.582Z"
+    },
+    {
+      "id": "ccb6346d-7443-4644-9612-4f3467664586",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.44,
+      "risk_band": "medium",
+      "premium": 51,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "Rain probability",
+            "contribution_pct": 100,
+            "detail": "1 days forecast above 15mm rain"
+          }
+        ],
+        "summary": "Medium risk this week. 1 days forecast above 15mm rain."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T11:26:03.587Z"
+    },
+    {
+      "id": "982f3e50-cf63-485f-9757-283bb4524cd0",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.52,
+      "risk_band": "medium",
+      "premium": 58,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "AQI forecast",
+            "contribution_pct": 47,
+            "detail": "2 days predicted AQI above 280"
+          },
+          {
+            "factor": "Rain probability",
+            "contribution_pct": 31,
+            "detail": "1 days forecast above 15mm rain"
+          }
+        ],
+        "summary": "Medium risk this week. 2 days predicted AQI above 280."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T11:39:52.663Z"
+    },
+    {
+      "id": "7d9184b1-f6a3-4334-b3d9-f16370d108d3",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.61,
+      "risk_band": "medium",
+      "premium": 64,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "Historical triggers",
+            "contribution_pct": 100,
+            "detail": "1 triggers in the last 4 weeks"
+          }
+        ],
+        "summary": "Medium risk this week. 1 triggers in the last 4 weeks."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T11:39:52.669Z"
+    },
+    {
+      "id": "76759e91-8ca2-4de9-abbb-e171b6c2e945",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.44,
+      "risk_band": "medium",
+      "premium": 51,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "Rain probability",
+            "contribution_pct": 100,
+            "detail": "1 days forecast above 15mm rain"
+          }
+        ],
+        "summary": "Medium risk this week. 1 days forecast above 15mm rain."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T11:39:52.674Z"
+    },
+    {
+      "id": "db948700-e00f-4037-80d8-d40cfb206256",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.52,
+      "risk_band": "medium",
+      "premium": 58,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "AQI forecast",
+            "contribution_pct": 47,
+            "detail": "2 days predicted AQI above 280"
+          },
+          {
+            "factor": "Rain probability",
+            "contribution_pct": 31,
+            "detail": "1 days forecast above 15mm rain"
+          }
+        ],
+        "summary": "Medium risk this week. 2 days predicted AQI above 280."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T11:40:37.060Z"
+    },
+    {
+      "id": "76cebfe0-d65a-4f6c-9cb0-8b1b5c46fd41",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.61,
+      "risk_band": "medium",
+      "premium": 64,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "Historical triggers",
+            "contribution_pct": 100,
+            "detail": "1 triggers in the last 4 weeks"
+          }
+        ],
+        "summary": "Medium risk this week. 1 triggers in the last 4 weeks."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T11:40:37.064Z"
+    },
+    {
+      "id": "984c2245-82b4-4963-875c-3f4722a8b3c0",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "zone_id": "koramangala",
+      "week_start": "2026-04-06",
+      "shifts_covered": "both",
+      "risk_score": 0.44,
+      "risk_band": "medium",
+      "premium": 51,
+      "payout_cap": 4800,
+      "explanation": {
+        "top_factors": [
+          {
+            "factor": "Rain probability",
+            "contribution_pct": 100,
+            "detail": "1 days forecast above 15mm rain"
+          }
+        ],
+        "summary": "Medium risk this week. 1 days forecast above 15mm rain."
+      },
+      "valid_until": "2026-04-05T23:59:00+05:30",
+      "created_at": "2026-04-01T11:40:37.068Z"
     }
-  ]
+  ],
+  "mock_platform_riders": [
+    {
+      "id": "185f1189-cad0-4ea4-aa4b-477d5f26b78c",
+      "phone": "9876543210",
+      "platform": "swiggy",
+      "zone_id": "koramangala",
+      "rider_status": "active",
+      "avg_lunch_earnings": 420,
+      "avg_dinner_earnings": 680,
+      "active_days_per_week": 6,
+      "last_active": "2026-03-31T13:00:00Z",
+      "account_age_months": 8
+    },
+    {
+      "id": "c481c854-8095-4a1c-95bc-fcb05b979ff2",
+      "phone": "9123456780",
+      "platform": "zomato",
+      "zone_id": "whitefield",
+      "rider_status": "active",
+      "avg_lunch_earnings": 360,
+      "avg_dinner_earnings": 610,
+      "active_days_per_week": 6,
+      "last_active": "2026-03-31T18:30:00Z",
+      "account_age_months": 8
+    }
+  ],
+  "weekly_policies": [
+    {
+      "id": "policy-asha-active",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "quote_id": "quote-seed-001",
+      "week_start": "2026-03-30",
+      "week_end": "2026-04-05",
+      "shifts_covered": "both",
+      "premium_paid": 52,
+      "payout_cap": 5280,
+      "status": "active",
+      "created_at": "2026-03-28T14:00:00Z"
+    }
+  ],
+  "wallets": [
+    {
+      "id": "wallet-asha",
+      "rider_id": "11111111-1111-4111-8111-111111111111",
+      "balance": 356,
+      "updated_at": "2026-03-31T20:16:00Z"
+    },
+    {
+      "id": "wallet-rohan",
+      "rider_id": "22222222-2222-4222-8222-222222222222",
+      "balance": 50,
+      "updated_at": "2026-03-30T10:00:00Z"
+    }
+  ],
+  "wallet_transactions": [
+    {
+      "id": "txn-seed-1",
+      "wallet_id": "wallet-asha",
+      "type": "credit_topup",
+      "amount": 500,
+      "reference_type": "wallet",
+      "reference_id": null,
+      "description": "Manual top-up (demo)",
+      "created_at": "2026-03-25T09:00:00Z"
+    },
+    {
+      "id": "txn-seed-2",
+      "wallet_id": "wallet-asha",
+      "type": "debit_premium",
+      "amount": -52,
+      "reference_type": "policy",
+      "reference_id": "policy-asha-active",
+      "description": "Weekly premium — Mar 30 to Apr 5",
+      "created_at": "2026-03-28T14:00:00Z"
+    }
+  ],
+  "claims": []
 }

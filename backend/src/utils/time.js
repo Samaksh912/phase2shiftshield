@@ -47,6 +47,10 @@ function getCurrentISTTimestamp() {
   return `${year}-${month}-${day}T${hour}:${minute}:${second}+05:30`;
 }
 
+function getCurrentISTDate(date = new Date()) {
+  return formatDate(toISTDate(date));
+}
+
 function getNextMonday(date = new Date()) {
   const istDate = toISTDate(date);
   const weekday = istDate.getUTCDay();
@@ -59,6 +63,7 @@ module.exports = {
   IST_OFFSET_MINUTES,
   addDays,
   getCurrentISTTimestamp,
+  getCurrentISTDate,
   getNextMonday,
   getPurchaseDeadline,
   getWeekEnd,
