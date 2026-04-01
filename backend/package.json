@@ -5,6 +5,7 @@
   "description": "ShiftShield Phase 2 backend quote generation service",
   "scripts": {
     "start": "node src/index.js",
+    "policy:lifecycle": "node src/policy-lifecycle.js",
     "test": "node --test tests/*.test.js"
   },
   "dependencies": {

@@ -12,6 +12,80 @@ function randomId() {
   return crypto.randomUUID();
 }
 
+function normalizeQuoteRecord(quote) {
+  if (!quote) {
+    return null;
+  }
+
+  return {
+    id: quote.id,
+    rider_id: quote.rider_id,
+    zone_id: quote.zone_id,
+    week_start: quote.week_start,
+    shifts_covered: quote.shifts_covered,
+    risk_score: quote.risk_score,
+    risk_band: quote.risk_band,
+    premium: quote.premium,
+    payout_cap: quote.payout_cap,
+    explanation: quote.explanation ?? quote.explanation_json,
+    valid_until: quote.valid_until,
+    created_at: quote.created_at
+  };
+}
+
+function normalizePolicyRecord(policy) {
+  if (!policy) {
+    return null;
+  }
+
+  return {
+    id: policy.id,
+    rider_id: policy.rider_id,
+    quote_id: policy.quote_id,
+    week_start: policy.week_start,
+    week_end: policy.week_end,
+    shifts_covered: policy.shifts_covered,
+    premium_paid: policy.premium_paid,
+    payout_cap: policy.payout_cap,
+    status: policy.status,
+    created_at: policy.created_at
+  };
+}
+
+function normalizeActivePolicyRecord(policy) {
+  if (!policy) {
+    return null;
+  }
+
+  return {
+    ...normalizePolicyRecord(policy),
+    rider: policy.rider || policy.riders || null
+  };
+}
+
+function normalizeClaimRecord(claim) {
+  if (!claim) {
+    return null;
+  }
+
+  return {
+    id: claim.id,
+    rider_id: claim.rider_id,
+    policy_id: claim.policy_id,
+    trigger_event_id: claim.trigger_event_id,
+    shift_type: claim.shift_type,
+    claim_date: claim.claim_date,
+    baseline_used: claim.baseline_used,
+    payout_percent: claim.payout_percent,
+    payout_amount: claim.payout_amount,
+    status: claim.status,
+    fraud_flag: claim.fraud_flag,
+    created_at: claim.created_at,
+    trigger_event: claim.trigger_event || claim.trigger_events || null,
+    policy: normalizePolicyRecord(claim.policy || claim.weekly_policies || null)
+  };
+}
+
 class LocalDataStore {
   constructor(config = getConfig()) {
     this.config = config;
@@ -214,7 +288,127 @@ class LocalDataStore {
 
     store.policy_quotes.push(storedQuote);
     this.writeStore(store);
-    return storedQuote;
+    return normalizeQuoteRecord(storedQuote);
+  }
+
+  async getQuoteById(quoteId) {
+    const store = this.readStore();
+    return normalizeQuoteRecord(store.policy_quotes.find((quote) => quote.id === quoteId) || null);
+  }
+
+  async getPolicyByRiderAndWeekStart(riderId, weekStart) {
+    const store = this.readStore();
+    return normalizePolicyRecord(
+      store.weekly_policies.find((policy) => policy.rider_id === riderId && policy.week_start === weekStart) || null
+    );
+  }
+
+  async createPolicy(policy) {
+    const store = this.readStore();
+    const existingPolicy = store.weekly_policies.find(
+      (item) => item.rider_id === policy.rider_id && item.week_start === policy.week_start
+    );
+    if (existingPolicy) {
+      const error = new Error("Policy already exists for this rider and week");
+      error.code = "duplicate_policy";
+      throw error;
+    }
+
+    const createdPolicy = {
+      id: policy.id || randomId(),
+      ...policy,
+      created_at: policy.created_at || new Date().toISOString()
+    };
+
+    store.weekly_policies.push(createdPolicy);
+    this.writeStore(store);
+    return normalizePolicyRecord(createdPolicy);
+  }
+
+  async getCurrentPolicyByRiderId(riderId, currentDate) {
+    const store = this.readStore();
+    const currentWeekPolicies = store.weekly_policies
+      .filter(
+        (policy) =>
+          policy.rider_id === riderId &&
+          (policy.status === "scheduled" || policy.status === "active") &&
+          policy.week_start <= currentDate &&
+          policy.week_end >= currentDate
+      )
+      .sort((left, right) => {
+        if (left.status !== right.status) {
+          return left.status === "active" ? -1 : 1;
+        }
+        return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
+      });
+
+    if (currentWeekPolicies[0]) {
+      return normalizePolicyRecord(currentWeekPolicies[0]);
+    }
+
+    const upcomingScheduledPolicies = store.weekly_policies
+      .filter(
+        (policy) => policy.rider_id === riderId && policy.status === "scheduled" && policy.week_start > currentDate
+      )
+      .sort((left, right) => {
+        if (left.week_start !== right.week_start) {
+          return left.week_start.localeCompare(right.week_start);
+        }
+        return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
+      });
+
+    return normalizePolicyRecord(upcomingScheduledPolicies[0] || null);
+  }
+
+  async listPoliciesByRiderId(riderId, { limit = 20, offset = 0 } = {}) {
+    const store = this.readStore();
+    return store.weekly_policies
+      .filter((policy) => policy.rider_id === riderId)
+      .sort((left, right) => {
+        if (left.week_start !== right.week_start) {
+          return right.week_start.localeCompare(left.week_start);
+        }
+        return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
+      })
+      .slice(offset, offset + limit)
+      .map((policy) => normalizePolicyRecord(policy));
+  }
+
+  async countPoliciesByRiderId(riderId) {
+    const store = this.readStore();
+    return store.weekly_policies.filter((policy) => policy.rider_id === riderId).length;
+  }
+
+  async getPolicyByIdForRider(policyId, riderId) {
+    const store = this.readStore();
+    return normalizePolicyRecord(
+      store.weekly_policies.find((policy) => policy.id === policyId && policy.rider_id === riderId) || null
+    );
+  }
+
+  async runPolicyLifecycle(currentDate) {
+    const store = this.readStore();
+    let activatedCount = 0;
+    let expiredCount = 0;
+
+    for (const policy of store.weekly_policies) {
+      if (policy.status === "scheduled" && policy.week_start === currentDate) {
+        policy.status = "active";
+        activatedCount += 1;
+      } else if (policy.status === "active" && policy.week_end < currentDate) {
+        policy.status = "expired";
+        expiredCount += 1;
+      }
+    }
+
+    if (activatedCount > 0 || expiredCount > 0) {
+      this.writeStore(store);
+    }
+
+    return {
+      activated_count: activatedCount,
+      expired_count: expiredCount
+    };
   }
 
   async listActivePoliciesByZoneAndShift(zoneId, shiftType, claimDate) {
@@ -233,7 +427,8 @@ class LocalDataStore {
         ...policy,
         rider: store.riders.find((rider) => rider.id === policy.rider_id) || null
       }))
-      .filter((policy) => policy.rider && policy.rider.zone_id === zoneId);
+      .filter((policy) => policy.rider && policy.rider.zone_id === zoneId)
+      .map((policy) => normalizeActivePolicyRecord(policy));
   }
 
   async getClaimByUnique(policyId, shiftType, claimDate) {
@@ -255,7 +450,7 @@ class LocalDataStore {
     };
     store.claims.push(createdClaim);
     this.writeStore(store);
-    return createdClaim;
+    return normalizeClaimRecord(createdClaim);
   }
 
   async deleteClaimById(claimId) {
@@ -334,6 +529,14 @@ class LocalDataStore {
       .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime());
   }
 
+  async listWalletTransactionsByRiderId(riderId) {
+    const wallet = await this.getWalletByRiderId(riderId);
+    if (!wallet) {
+      return [];
+    }
+    return this.listWalletTransactionsByWalletId(wallet.id);
+  }
+
   async getMockPlatformRiderByPhone(phone) {
     const store = this.readStore();
     return store.mock_platform_riders.find((rider) => rider.phone === phone) || null;
@@ -348,7 +551,8 @@ class LocalDataStore {
         ...claim,
         trigger_event: store.trigger_events.find((trigger) => trigger.id === claim.trigger_event_id) || null,
         policy: store.weekly_policies.find((policy) => policy.id === claim.policy_id) || null
-      }));
+      }))
+      .map((claim) => normalizeClaimRecord(claim));
   }
 
   async getClaimByIdForRider(claimId, riderId) {
@@ -361,6 +565,14 @@ class LocalDataStore {
     return store.weekly_policies
       .filter((policy) => policy.rider_id === riderId)
       .reduce((sum, policy) => sum + policy.premium_paid, 0);
+  }
+
+  async getExistingPolicyForWeek(riderId, weekStart) {
+    return this.getPolicyByRiderAndWeekStart(riderId, weekStart);
+  }
+
+  async listPolicyHistoryByRiderId(riderId, options) {
+    return this.listPoliciesByRiderId(riderId, options);
   }
 }
 
@@ -425,7 +637,166 @@ class SupabaseDataStore {
     if (error) {
       throw error;
     }
+    return normalizeQuoteRecord(data);
+  }
+
+  async getQuoteById(quoteId) {
+    const { data, error } = await this.client.from("policy_quotes").select("*").eq("id", quoteId).maybeSingle();
+    if (error) {
+      throw error;
+    }
+    return normalizeQuoteRecord(data);
+  }
+
+  async getPolicyByRiderAndWeekStart(riderId, weekStart) {
+    const { data, error } = await this.client
+      .from("weekly_policies")
+      .select("*")
+      .eq("rider_id", riderId)
+      .eq("week_start", weekStart)
+      .maybeSingle();
+    if (error) {
+      throw error;
+    }
+    return normalizePolicyRecord(data);
+  }
+
+  async createPolicy(policy) {
+    const payload = {
+      id: policy.id,
+      rider_id: policy.rider_id,
+      quote_id: policy.quote_id,
+      week_start: policy.week_start,
+      week_end: policy.week_end,
+      shifts_covered: policy.shifts_covered,
+      premium_paid: policy.premium_paid,
+      payout_cap: policy.payout_cap,
+      status: policy.status
+    };
+    const { data, error } = await this.client.from("weekly_policies").insert(payload).select("*").single();
+    if (error) {
+      throw error;
+    }
     return data;
+  }
+
+  async getCurrentPolicyByRiderId(riderId, currentDate) {
+    const { data, error } = await this.client
+      .from("weekly_policies")
+      .select("*")
+      .eq("rider_id", riderId)
+      .in("status", ["scheduled", "active"])
+      .order("week_start", { ascending: true })
+      .order("created_at", { ascending: false });
+    if (error) {
+      throw error;
+    }
+
+    const policies = data || [];
+    const currentWeekPolicy = policies.find(
+      (policy) => policy.week_start <= currentDate && policy.week_end >= currentDate
+    );
+    if (currentWeekPolicy) {
+      return normalizePolicyRecord(
+        currentWeekPolicy.status === "active"
+          ? currentWeekPolicy
+          : policies.find(
+            (policy) =>
+              policy.status === "active" &&
+              policy.week_start <= currentDate &&
+              policy.week_end >= currentDate
+          ) || currentWeekPolicy
+      );
+    }
+
+    return normalizePolicyRecord(
+      policies.find((policy) => policy.status === "scheduled" && policy.week_start > currentDate) || null
+    );
+  }
+
+  async listPoliciesByRiderId(riderId, { limit = 20, offset = 0 } = {}) {
+    const { data, error } = await this.client
+      .from("weekly_policies")
+      .select("*")
+      .eq("rider_id", riderId)
+      .order("week_start", { ascending: false })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) {
+      throw error;
+    }
+    return (data || []).map((policy) => normalizePolicyRecord(policy));
+  }
+
+  async countPoliciesByRiderId(riderId) {
+    const { count, error } = await this.client
+      .from("weekly_policies")
+      .select("id", { count: "exact", head: true })
+      .eq("rider_id", riderId);
+    if (error) {
+      throw error;
+    }
+    return count || 0;
+  }
+
+  async getPolicyByIdForRider(policyId, riderId) {
+    const { data, error } = await this.client
+      .from("weekly_policies")
+      .select("*")
+      .eq("id", policyId)
+      .eq("rider_id", riderId)
+      .maybeSingle();
+    if (error) {
+      throw error;
+    }
+    return normalizePolicyRecord(data);
+  }
+
+  async runPolicyLifecycle(currentDate) {
+    const { data: scheduledPolicies, error: scheduledError } = await this.client
+      .from("weekly_policies")
+      .select("id")
+      .eq("status", "scheduled")
+      .eq("week_start", currentDate);
+    if (scheduledError) {
+      throw scheduledError;
+    }
+
+    const { data: activePolicies, error: activeError } = await this.client
+      .from("weekly_policies")
+      .select("id")
+      .eq("status", "active")
+      .lt("week_end", currentDate);
+    if (activeError) {
+      throw activeError;
+    }
+
+    if ((scheduledPolicies || []).length > 0) {
+      const { error } = await this.client
+        .from("weekly_policies")
+        .update({ status: "active" })
+        .eq("status", "scheduled")
+        .eq("week_start", currentDate);
+      if (error) {
+        throw error;
+      }
+    }
+
+    if ((activePolicies || []).length > 0) {
+      const { error } = await this.client
+        .from("weekly_policies")
+        .update({ status: "expired" })
+        .eq("status", "active")
+        .lt("week_end", currentDate);
+      if (error) {
+        throw error;
+      }
+    }
+
+    return {
+      activated_count: (scheduledPolicies || []).length,
+      expired_count: (activePolicies || []).length
+    };
   }
 
   async listActivePoliciesByZoneAndShift(zoneId, shiftType, claimDate) {
@@ -447,7 +818,8 @@ class SupabaseDataStore {
       .map((policy) => ({
         ...policy,
         rider: policy.riders
-      }));
+      }))
+      .map((policy) => normalizeActivePolicyRecord(policy));
   }
 
   async getClaimByUnique(policyId, shiftType, claimDate) {
@@ -461,7 +833,7 @@ class SupabaseDataStore {
     if (error) {
       throw error;
     }
-    return data;
+    return normalizeClaimRecord(data);
   }
 
   async createClaim(claim) {
@@ -576,6 +948,14 @@ class SupabaseDataStore {
     return data || [];
   }
 
+  async listWalletTransactionsByRiderId(riderId) {
+    const wallet = await this.getWalletByRiderId(riderId);
+    if (!wallet) {
+      return [];
+    }
+    return this.listWalletTransactionsByWalletId(wallet.id);
+  }
+
   async getMockPlatformRiderByPhone(phone) {
     const { data, error } = await this.client
       .from("mock_platform_riders")
@@ -597,11 +977,13 @@ class SupabaseDataStore {
     if (error) {
       throw error;
     }
-    return (data || []).map((claim) => ({
-      ...claim,
-      trigger_event: claim.trigger_events,
-      policy: claim.weekly_policies
-    }));
+    return (data || [])
+      .map((claim) => ({
+        ...claim,
+        trigger_event: claim.trigger_events,
+        policy: claim.weekly_policies
+      }))
+      .map((claim) => normalizeClaimRecord(claim));
   }
 
   async getClaimByIdForRider(claimId, riderId) {
@@ -617,11 +999,11 @@ class SupabaseDataStore {
     if (!data) {
       return null;
     }
-    return {
+    return normalizeClaimRecord({
       ...data,
       trigger_event: data.trigger_events,
       policy: data.weekly_policies
-    };
+    });
   }
 
   async sumPremiumsPaidForRider(riderId) {
@@ -630,6 +1012,14 @@ class SupabaseDataStore {
       throw error;
     }
     return (data || []).reduce((sum, policy) => sum + policy.premium_paid, 0);
+  }
+
+  async getExistingPolicyForWeek(riderId, weekStart) {
+    return this.getPolicyByRiderAndWeekStart(riderId, weekStart);
+  }
+
+  async listPolicyHistoryByRiderId(riderId, options) {
+    return this.listPoliciesByRiderId(riderId, options);
   }
 }
 

@@ -29,6 +29,9 @@ function mapSeverityToPayout(severityLevel) {
   return 28;
 }
 
+const VALID_TRIGGER_TYPES = new Set(["rain", "heat", "aqi"]);
+const VALID_SHIFT_TYPES = new Set(["lunch", "dinner"]);
+
 class AdminService {
   constructor({ dataStore, claimsEngine }) {
     this.dataStore = dataStore;
@@ -45,7 +48,38 @@ class AdminService {
     }
 
     const zone = await this.dataStore.getZoneById(zoneId);
-    const payoutPercent = payload.payout_percent || mapSeverityToPayout(payload.severity_level || 2);
+    if (!zone) {
+      const error = new Error("zone_id must reference a known zone");
+      error.statusCode = 400;
+      error.code = "validation_error";
+      throw error;
+    }
+
+    if (!VALID_TRIGGER_TYPES.has(triggerType)) {
+      const error = new Error("trigger_type must be one of rain, heat, aqi");
+      error.statusCode = 400;
+      error.code = "validation_error";
+      throw error;
+    }
+
+    if (!VALID_SHIFT_TYPES.has(shiftType)) {
+      const error = new Error("shift_type must be one of lunch, dinner");
+      error.statusCode = 400;
+      error.code = "validation_error";
+      throw error;
+    }
+
+    if (
+      payload.payout_percent !== undefined &&
+      (!Number.isInteger(payload.payout_percent) || payload.payout_percent < 20 || payload.payout_percent > 80)
+    ) {
+      const error = new Error("payout_percent must be an integer between 20 and 80");
+      error.statusCode = 400;
+      error.code = "validation_error";
+      throw error;
+    }
+
+    const payoutPercent = payload.payout_percent ?? mapSeverityToPayout(payload.severity_level || 2);
     const severityLevel = payload.severity_level || (payoutPercent >= 56 ? 3 : payoutPercent >= 36 ? 2 : 1);
 
     const triggerEvent = await this.dataStore.createTriggerEvent({
@@ -56,7 +90,7 @@ class AdminService {
       shift_type: shiftType,
       condition_a_data: {
         ...mapTriggerToConditionA(triggerType, payload.value),
-        zone_name: zone?.name || zoneId
+        zone_name: zone.name
       },
       condition_b_data: payload.condition_b || defaultConditionB()
     });

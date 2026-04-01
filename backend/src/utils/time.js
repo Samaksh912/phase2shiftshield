@@ -25,7 +25,7 @@ function getPurchaseDeadline(weekStart) {
 }
 
 function isBeforeDeadline(deadlineIso, now = new Date()) {
-  return now.getTime() < new Date(deadlineIso).getTime();
+  return now.getTime() <= new Date(deadlineIso).getTime();
 }
 
 function getISTWeekday(dateString) {

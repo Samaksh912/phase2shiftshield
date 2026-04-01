@@ -1,13 +1,13 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { QuoteService } = require("../src/services/quote-service");
-const { LocalDataStore } = require("../src/utils/storage");
-const { getConfig } = require("../src/utils/config");
 const { getNextMonday } = require("../src/utils/time");
+const { createTestDataStore } = require("./test-helpers");
 
 test("QuoteService.generateQuote returns contract-compliant quote data", async () => {
+  const { dataStore } = createTestDataStore();
   const quoteService = new QuoteService({
-    dataStore: new LocalDataStore(getConfig()),
+    dataStore,
     mlClient: {
       async predictPremium() {
         return {
@@ -49,7 +49,8 @@ test("QuoteService.generateQuote returns contract-compliant quote data", async (
           }
         };
       }
-    }
+    },
+    nowProvider: () => new Date("2026-04-01T00:00:00Z")
   });
 
   const response = await quoteService.generateQuote({
@@ -70,8 +71,9 @@ test("QuoteService.generateQuote returns contract-compliant quote data", async (
 });
 
 test("QuoteService.generateQuote includes user-facing reason when an active disruption blocks purchase", async () => {
+  const { dataStore } = createTestDataStore();
   const quoteService = new QuoteService({
-    dataStore: new LocalDataStore(getConfig()),
+    dataStore,
     mlClient: {
       async predictPremium() {
         return {
@@ -129,9 +131,10 @@ test("QuoteService.generateQuote includes user-facing reason when an active disr
   quoteService.dataStore.hasActiveDisruption = originalHasActiveDisruption;
 });
 
-test("QuoteService.generateQuote includes user-facing reason when the purchase window is closed", async () => {
+test("QuoteService.generateQuote rejects a stale Monday once it is no longer the next upcoming Monday", async () => {
+  const { dataStore } = createTestDataStore();
   const quoteService = new QuoteService({
-    dataStore: new LocalDataStore(getConfig()),
+    dataStore,
     mlClient: {
       async predictPremium() {
         return {
@@ -172,11 +175,12 @@ test("QuoteService.generateQuote includes user-facing reason when the purchase w
     nowProvider: () => new Date("2026-04-06T00:00:00Z")
   });
 
-  const response = await quoteService.generateQuote({
-    riderId: "11111111-1111-4111-8111-111111111111",
-    weekStart: "2026-04-06"
-  });
-
-  assert.equal(response.quote.can_purchase, false);
-  assert.equal(response.quote.reason, "The purchase window for this policy week has closed.");
+  await assert.rejects(
+    () =>
+      quoteService.generateQuote({
+        riderId: "11111111-1111-4111-8111-111111111111",
+        weekStart: "2026-04-06"
+      }),
+    /next upcoming Monday/
+  );
 });
