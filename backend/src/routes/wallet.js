@@ -1,4 +1,5 @@
 const express = require("express");
+const { safelyCreateNotification } = require("../utils/notifications");
 
 function formatTransaction(transaction) {
   return {
@@ -10,7 +11,16 @@ function formatTransaction(transaction) {
   };
 }
 
-function buildWalletRouter({ dataStore, walletService }) {
+async function notifyWalletEvent(notificationService, { riderId, type, title, message }) {
+  await safelyCreateNotification(notificationService, {
+    riderId,
+    type,
+    title,
+    message
+  });
+}
+
+function buildWalletRouter({ dataStore, walletService, notificationService }) {
   const router = express.Router();
 
   router.get("/", async (req, res, next) => {
@@ -86,6 +96,13 @@ function buildWalletRouter({ dataStore, walletService }) {
         "wallet"
       );
 
+      await notifyWalletEvent(notificationService, {
+        riderId: req.user.rider_id,
+        type: "wallet_credited",
+        title: "Wallet topped up",
+        message: `₹${amount} has been added to your wallet.`
+      });
+
       return res.status(200).json({
         wallet: {
           id: result.wallet.id,
@@ -136,6 +153,13 @@ function buildWalletRouter({ dataStore, walletService }) {
         }
         throw error;
       }
+
+      await notifyWalletEvent(notificationService, {
+        riderId: req.user.rider_id,
+        type: "wallet_debited",
+        title: "Withdrawal requested",
+        message: `Your withdrawal of ₹${amount} is being processed.`
+      });
 
       return res.status(200).json({
         wallet: {

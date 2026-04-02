@@ -1,11 +1,34 @@
 const { getCurrentISTDate } = require("../utils/time");
+const { safelyCreateNotification } = require("../utils/notifications");
 const { runFraudChecks } = require("./fraud-checker");
 
 class ClaimsEngine {
-  constructor({ dataStore, walletService, nowProvider = () => new Date() }) {
+  constructor({ dataStore, walletService, notificationService = null, nowProvider = () => new Date() }) {
     this.dataStore = dataStore;
     this.walletService = walletService;
+    this.notificationService = notificationService;
     this.nowProvider = nowProvider;
+  }
+
+  async notifyClaimOutcome({ riderId, claimStatus, payoutAmount, shiftType }) {
+    if (claimStatus === "paid") {
+      await safelyCreateNotification(this.notificationService, {
+        riderId,
+        type: "claim_paid",
+        title: "Claim paid",
+        message: `₹${payoutAmount} has been credited for your ${shiftType} shift claim.`
+      });
+      return;
+    }
+
+    if (claimStatus === "under_review") {
+      await safelyCreateNotification(this.notificationService, {
+        riderId,
+        type: "claim_under_review",
+        title: "Payout verification in progress",
+        message: "Your claim has been created and payout verification is in progress."
+      });
+    }
   }
 
   async processClaimsForTrigger(triggerEvent) {
@@ -79,6 +102,13 @@ class ClaimsEngine {
           throw error;
         }
       }
+
+      await this.notifyClaimOutcome({
+        riderId: rider.id,
+        claimStatus,
+        payoutAmount,
+        shiftType
+      });
 
       results.push({
         rider_id: rider.id,

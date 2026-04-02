@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const { getCurrentISTDate, getPurchaseDeadline, getWeekEnd, isBeforeDeadline } = require("../utils/time");
+const { safelyCreateNotification } = require("../utils/notifications");
 
 function buildError({ message, code, statusCode }) {
   const error = new Error(message);
@@ -9,9 +10,10 @@ function buildError({ message, code, statusCode }) {
 }
 
 class PolicyService {
-  constructor({ dataStore, walletService, nowProvider = () => new Date() }) {
+  constructor({ dataStore, walletService, notificationService = null, nowProvider = () => new Date() }) {
     this.dataStore = dataStore;
     this.walletService = walletService;
+    this.notificationService = notificationService;
     this.nowProvider = nowProvider;
   }
 
@@ -52,7 +54,19 @@ class PolicyService {
     return { limit, offset };
   }
 
-  async createPolicy({ riderId, quoteId, paymentMethod }) {
+  async notifyPolicyEvent({ riderId, policy, notificationType }) {
+    const isRenewal = notificationType === "policy_renewed";
+    await safelyCreateNotification(this.notificationService, {
+      riderId,
+      type: notificationType,
+      title: isRenewal ? "Policy renewed" : "Policy created",
+      message: isRenewal
+        ? `Your policy has been renewed for ${policy.week_start} to ${policy.week_end}.`
+        : `Your policy is confirmed for ${policy.week_start} to ${policy.week_end}.`
+    });
+  }
+
+  async createPolicy({ riderId, quoteId, paymentMethod, notificationType = "policy_created" }) {
     const now = this.nowProvider();
 
     if (!quoteId || typeof quoteId !== "string") {
@@ -122,6 +136,7 @@ class PolicyService {
     const policyId = crypto.randomUUID();
     let walletResponse = null;
     let transactionResponse = null;
+    let debitedTransactionId = null;
 
     if (paymentMethod === "wallet") {
       const wallet = await this.dataStore.getWalletByRiderId(riderId);
@@ -148,6 +163,7 @@ class PolicyService {
           previous_balance: debitResult.wallet.balance + quote.premium,
           currency: "INR"
         };
+        debitedTransactionId = debitResult.transaction.id;
         transactionResponse = {
           id: debitResult.transaction.id,
           type: debitResult.transaction.type,
@@ -172,16 +188,40 @@ class PolicyService {
       }
     }
 
-    const policy = await this.dataStore.createPolicy({
-      id: policyId,
-      rider_id: riderId,
-      quote_id: quote.id,
-      week_start: quote.week_start,
-      week_end: weekEnd,
-      shifts_covered: quote.shifts_covered,
-      premium_paid: quote.premium,
-      payout_cap: quote.payout_cap,
-      status: "scheduled"
+    let policy;
+    try {
+      policy = await this.dataStore.createPolicy({
+        id: policyId,
+        rider_id: riderId,
+        quote_id: quote.id,
+        week_start: quote.week_start,
+        week_end: weekEnd,
+        shifts_covered: quote.shifts_covered,
+        premium_paid: quote.premium,
+        payout_cap: quote.payout_cap,
+        status: "scheduled"
+      });
+    } catch (error) {
+      if (debitedTransactionId) {
+        try {
+          await this.dataStore.rollbackWalletTransaction(debitedTransactionId);
+        } catch (rollbackError) {
+          console.error("critical_wallet_rollback_failure", {
+            original_error: error.message,
+            rollback_error: rollbackError.message,
+            rider_id: riderId,
+            policy_id: policyId,
+            transaction_id: debitedTransactionId
+          });
+        }
+      }
+      throw error;
+    }
+
+    await this.notifyPolicyEvent({
+      riderId,
+      policy,
+      notificationType
     });
 
     const response = {
@@ -199,6 +239,41 @@ class PolicyService {
     }
 
     return response;
+  }
+
+  async renewPolicy({ riderId, sourcePolicyId, quoteId, paymentMethod }) {
+    const sourcePolicy = await this.dataStore.getPolicyByIdForRider(sourcePolicyId, riderId);
+    if (!sourcePolicy) {
+      throw buildError({
+        message: "Policy not found",
+        code: "not_found",
+        statusCode: 404
+      });
+    }
+
+    const quote = await this.dataStore.getQuoteById(quoteId);
+    if (!quote || quote.rider_id !== riderId) {
+      throw buildError({
+        message: "Quote not found",
+        code: "not_found",
+        statusCode: 404
+      });
+    }
+
+    if (quote.week_start <= sourcePolicy.week_start) {
+      throw buildError({
+        message: "renewal quote must target a future coverage week",
+        code: "validation_error",
+        statusCode: 400
+      });
+    }
+
+    return this.createPolicy({
+      riderId,
+      quoteId,
+      paymentMethod,
+      notificationType: "policy_renewed"
+    });
   }
 
   async getCurrentPolicy(riderId) {

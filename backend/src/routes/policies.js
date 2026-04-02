@@ -43,6 +43,29 @@ function buildPoliciesRouter({ policyService }) {
     }
   });
 
+  router.post("/:id/renew", async (req, res, next) => {
+    try {
+      const response = await policyService.renewPolicy({
+        riderId: req.user.rider_id,
+        sourcePolicyId: req.params.id,
+        quoteId: req.body?.quote_id,
+        paymentMethod: req.body?.payment_method
+      });
+      return res.status(201).json(response);
+    } catch (error) {
+      if (error.code === "insufficient_balance") {
+        return res.status(400).json({
+          error: "insufficient_balance",
+          wallet_balance: error.wallet_balance,
+          premium_required: error.premium_required,
+          shortfall: error.shortfall,
+          message: error.message
+        });
+      }
+      return next(error);
+    }
+  });
+
   router.get("/:id", async (req, res, next) => {
     try {
       const response = await policyService.getPolicyDetail(req.user.rider_id, req.params.id);

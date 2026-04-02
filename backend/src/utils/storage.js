@@ -86,6 +86,23 @@ function normalizeClaimRecord(claim) {
   };
 }
 
+function normalizeNotificationRecord(notification) {
+  if (!notification) {
+    return null;
+  }
+
+  return {
+    id: notification.id,
+    rider_id: notification.rider_id,
+    type: notification.type,
+    title: notification.title,
+    message: notification.message,
+    is_read: Boolean(notification.is_read),
+    metadata: notification.metadata || notification.metadata_json || null,
+    created_at: notification.created_at
+  };
+}
+
 class LocalDataStore {
   constructor(config = getConfig()) {
     this.config = config;
@@ -243,7 +260,8 @@ class LocalDataStore {
           created_at: "2026-03-28T14:00:00Z"
         }
       ],
-      claims: []
+      claims: [],
+      notifications: []
     };
   }
 
@@ -323,6 +341,12 @@ class LocalDataStore {
     store.weekly_policies.push(createdPolicy);
     this.writeStore(store);
     return normalizePolicyRecord(createdPolicy);
+  }
+
+  async deletePolicyById(policyId) {
+    const store = this.readStore();
+    store.weekly_policies = store.weekly_policies.filter((policy) => policy.id !== policyId);
+    this.writeStore(store);
   }
 
   async getCurrentPolicyByRiderId(riderId, currentDate) {
@@ -522,6 +546,30 @@ class LocalDataStore {
     };
   }
 
+  async rollbackWalletTransaction(transactionId) {
+    const store = this.readStore();
+    const transactionIndex = store.wallet_transactions.findIndex((transaction) => transaction.id === transactionId);
+    if (transactionIndex === -1) {
+      return null;
+    }
+
+    const transaction = store.wallet_transactions[transactionIndex];
+    const wallet = store.wallets.find((item) => item.id === transaction.wallet_id);
+    if (!wallet) {
+      throw new Error("Wallet not found");
+    }
+
+    wallet.balance -= transaction.amount;
+    wallet.updated_at = new Date().toISOString();
+    store.wallet_transactions.splice(transactionIndex, 1);
+    this.writeStore(store);
+
+    return {
+      wallet: { ...wallet },
+      transaction
+    };
+  }
+
   async listWalletTransactionsByWalletId(walletId) {
     const store = this.readStore();
     return store.wallet_transactions
@@ -565,6 +613,42 @@ class LocalDataStore {
     return store.weekly_policies
       .filter((policy) => policy.rider_id === riderId)
       .reduce((sum, policy) => sum + policy.premium_paid, 0);
+  }
+
+  async createNotification(notification) {
+    const store = this.readStore();
+    const createdNotification = {
+      id: notification.id || randomId(),
+      rider_id: notification.rider_id,
+      type: notification.type,
+      title: notification.title,
+      message: notification.message,
+      is_read: notification.is_read ?? false,
+      metadata: notification.metadata || null,
+      created_at: notification.created_at || new Date().toISOString()
+    };
+    store.notifications.push(createdNotification);
+    this.writeStore(store);
+    return normalizeNotificationRecord(createdNotification);
+  }
+
+  async listNotificationsByRiderId(riderId, { limit = 20, offset = 0 } = {}) {
+    const store = this.readStore();
+    return store.notifications
+      .filter((notification) => notification.rider_id === riderId)
+      .sort((left, right) => new Date(right.created_at).getTime() - new Date(left.created_at).getTime())
+      .slice(offset, offset + limit)
+      .map((notification) => normalizeNotificationRecord(notification));
+  }
+
+  async countNotificationsByRiderId(riderId) {
+    const store = this.readStore();
+    return store.notifications.filter((notification) => notification.rider_id === riderId).length;
+  }
+
+  async countUnreadNotificationsByRiderId(riderId) {
+    const store = this.readStore();
+    return store.notifications.filter((notification) => notification.rider_id === riderId && !notification.is_read).length;
   }
 
   async getExistingPolicyForWeek(riderId, weekStart) {
@@ -677,7 +761,14 @@ class SupabaseDataStore {
     if (error) {
       throw error;
     }
-    return data;
+    return normalizePolicyRecord(data);
+  }
+
+  async deletePolicyById(policyId) {
+    const { error } = await this.client.from("weekly_policies").delete().eq("id", policyId);
+    if (error) {
+      throw error;
+    }
   }
 
   async getCurrentPolicyByRiderId(riderId, currentDate) {
@@ -841,7 +932,7 @@ class SupabaseDataStore {
     if (error) {
       throw error;
     }
-    return data;
+    return normalizeClaimRecord(data);
   }
 
   async deleteClaimById(claimId) {
@@ -936,6 +1027,45 @@ class SupabaseDataStore {
     };
   }
 
+  async rollbackWalletTransaction(transactionId) {
+    const { data: transaction, error: transactionFetchError } = await this.client
+      .from("wallet_transactions")
+      .select("*")
+      .eq("id", transactionId)
+      .maybeSingle();
+    if (transactionFetchError) {
+      throw transactionFetchError;
+    }
+    if (!transaction) {
+      return null;
+    }
+
+    const wallet = await this.getWalletById(transaction.wallet_id);
+    if (!wallet) {
+      throw new Error("Wallet not found");
+    }
+
+    const { data: updatedWallet, error: walletError } = await this.client
+      .from("wallets")
+      .update({ balance: wallet.balance - transaction.amount, updated_at: new Date().toISOString() })
+      .eq("id", wallet.id)
+      .select("*")
+      .single();
+    if (walletError) {
+      throw walletError;
+    }
+
+    const { error: deleteError } = await this.client.from("wallet_transactions").delete().eq("id", transactionId);
+    if (deleteError) {
+      throw deleteError;
+    }
+
+    return {
+      wallet: updatedWallet,
+      transaction
+    };
+  }
+
   async listWalletTransactionsByWalletId(walletId) {
     const { data, error } = await this.client
       .from("wallet_transactions")
@@ -1012,6 +1142,59 @@ class SupabaseDataStore {
       throw error;
     }
     return (data || []).reduce((sum, policy) => sum + policy.premium_paid, 0);
+  }
+
+  async createNotification(notification) {
+    const payload = {
+      id: notification.id,
+      rider_id: notification.rider_id,
+      type: notification.type,
+      title: notification.title,
+      message: notification.message,
+      is_read: notification.is_read ?? false,
+      metadata_json: notification.metadata || null
+    };
+    const { data, error } = await this.client.from("notifications").insert(payload).select("*").single();
+    if (error) {
+      throw error;
+    }
+    return normalizeNotificationRecord(data);
+  }
+
+  async listNotificationsByRiderId(riderId, { limit = 20, offset = 0 } = {}) {
+    const { data, error } = await this.client
+      .from("notifications")
+      .select("*")
+      .eq("rider_id", riderId)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) {
+      throw error;
+    }
+    return (data || []).map((notification) => normalizeNotificationRecord(notification));
+  }
+
+  async countNotificationsByRiderId(riderId) {
+    const { count, error } = await this.client
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("rider_id", riderId);
+    if (error) {
+      throw error;
+    }
+    return count || 0;
+  }
+
+  async countUnreadNotificationsByRiderId(riderId) {
+    const { count, error } = await this.client
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("rider_id", riderId)
+      .eq("is_read", false);
+    if (error) {
+      throw error;
+    }
+    return count || 0;
   }
 
   async getExistingPolicyForWeek(riderId, weekStart) {

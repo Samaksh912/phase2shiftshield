@@ -1,99 +1,24 @@
-# ShiftShield Phase 2 Backend Third Deep Pass Report
+# ShiftShield Phase 2 Backend Handoff Certification
 
-Date: 2026-04-01
+Date: 2026-04-02
 Repo: `/home/arnavbansal/Guidewire`
 Backend: `/home/arnavbansal/Guidewire/backend`
 Spec: `/home/arnavbansal/Guidewire/PHASE2_IMPLEMENTATION_SPEC.md`
 
-## Strategy
+## Certification Scope
 
-This pass did not repeat happy-path or broad edge-path testing. It focused on:
+This pass was a handoff/freeze-readiness certification, not a new exploratory test cycle.
 
-- malformed payload fuzzing
-- stateful multi-step sequences
-- cross-route invariants
-- response-shape strictness under unusual inputs
+It reconfirmed:
 
-## What Held
+- local backend test health
+- one final local whole-system flow
+- hosted notifications availability
+- one hosted notification smoke
+- one hosted whole-system smoke including notifications
+- cleanup verification for temporary hosted rows
 
-- Stateful wallet sequence invariants held:
-  - `topup -> topup -> withdraw -> failed withdraw -> read wallet`
-  - final balance and transaction count stayed consistent
-- Cross-route invariants held for repeated successful and failed wallet mutations
-- Previous deadline and simulate-trigger validation fixes held under repeated execution
-- Zero-state and repeated-read behavior remained stable
-- JSON failures still returned JSON, not HTML, and did not leak stack traces
-
-## Newly Verified Bugs
-
-### 1. `simulate-trigger` still accepts invalid `payout_percent` values
-
-- Severity: Medium
-- Repro:
-  - `POST /api/admin/simulate-trigger`
-  - payloads such as `-10`, `19`, `80.5`, `81`, `1000`
-  - actual result: `201 Created`
-  - expected result: `400 validation_error`
-- Failing test:
-  - `tests/third-pass-admin-payout-break.test.js`
-- Why this is a bug:
-  - spec data contract requires `payout_percent` to be an integer between `20` and `80`
-- Evidence:
-  - Spec: `PHASE2_IMPLEMENTATION_SPEC.md:288`
-  - Current code performs no `payout_percent` validation: `src/services/admin-service.js:41-70`
-- Smallest fix:
-  - validate `payload.payout_percent` when present:
-    - integer only
-    - range `20..80`
-    - reject with `400` / `validation_error`
-
-### 2. Malformed JSON requests are mislabeled as `server_error`
-
-- Severity: Low
-- Repro:
-  - send malformed JSON to `POST /api/quotes/generate`, for example raw body:
-    - `{"week_start":`
-  - actual result:
-    - status `400`
-    - body `{ "error": "server_error", "message": "Unexpected end of JSON input" }`
-  - expected result:
-    - malformed JSON should be classified as a validation/bad-request error, not a server error
-- Failing test:
-  - `tests/third-pass-json-parse-break.test.js`
-- Why this is a bug:
-  - it breaks error-shape semantics for malformed payload fuzzing and makes frontend/client error handling ambiguous
-- Evidence:
-  - Spec bad-request bucket: `PHASE2_IMPLEMENTATION_SPEC.md:71`
-  - Global error mapper defaults unknown codes to `"server_error"`: `src/app.js:45-50`
-- Smallest fix:
-  - map JSON parse failures from `express.json()` to `validation_error` when status/statusCode is `400`
-
-### 3. Wallet top-up accepts unsafe integers and silently rounds them
-
-- Severity: Medium
-- Repro:
-  - send raw JSON body `{"amount":9007199254740993}` to `POST /api/wallet/topup`
-  - actual result:
-    - request succeeds with `200`
-    - transaction amount is silently rounded to `9007199254740992`
-    - balance is off by `1`
-  - expected result:
-    - reject unsafe integers instead of mutating money with rounded values
-- Failing test:
-  - `tests/third-pass-wallet-precision-break.test.js`
-- Why this is a bug:
-  - the API silently processes a different amount than the caller sent
-  - this violates money-movement correctness
-- Evidence:
-  - Spec: `PHASE2_IMPLEMENTATION_SPEC.md:72`
-  - Current validation uses `Number.isInteger(amount)` instead of `Number.isSafeInteger(amount)`:
-    - `src/routes/wallet.js:64-69`
-    - `src/routes/wallet.js:104-108`
-- Smallest fix:
-  - require `Number.isSafeInteger(amount)` for wallet top-up and withdraw
-  - return `400 validation_error` for unsafe integers
-
-## Verification Run
+## Local Certification
 
 Command:
 
@@ -103,11 +28,98 @@ cd /home/arnavbansal/Guidewire/backend && npm test
 
 Result:
 
-- Total test files: 20
-- Passed: 17
-- Failed: 3
-- Failing files:
-  - `tests/third-pass-admin-payout-break.test.js`
-  - `tests/third-pass-json-parse-break.test.js`
-  - `tests/third-pass-wallet-precision-break.test.js`
+- `32` passing
+- `0` failing
 
+Additional targeted certification run:
+
+- `node --test tests/phase1-whole-system.test.js`
+- result: pass
+
+Locally verified:
+
+- quote generation
+- policy create / renew path
+- dashboard read
+- trigger / claim path
+- wallet mutation
+- notifications
+- rider isolation
+
+## Hosted Certification
+
+### Notifications table
+
+Verified on hosted Supabase:
+
+- `public.notifications` exists
+- read access works
+- backend-required columns are selectable:
+  - `id`
+  - `rider_id`
+  - `type`
+  - `title`
+  - `message`
+  - `is_read`
+  - `metadata_json`
+  - `created_at`
+
+### Hosted notification smoke
+
+Verified with a minimal real action:
+
+- action: wallet top-up
+- notification created successfully
+- `GET /api/notifications` returned the created notification
+- unread/list behavior worked
+- rider scoping held
+- cleanup succeeded
+
+### Hosted whole-system smoke
+
+Verified on the hosted path:
+
+- quote
+- policy create
+- dashboard
+- lifecycle activation
+- trigger / claim
+- wallet
+- notifications
+
+Confirmed:
+
+- `policy_created` notification visible
+- `claim_paid` notification visible
+- integrated flow completed successfully
+
+Cleanup verified after hosted smoke:
+
+- wallet restored to original balance
+- temporary policy removed
+- temporary quote removed
+- temporary claim removed
+- temporary notifications removed
+
+## What Is Verified
+
+- Local backend is green and regression-safe at handoff time.
+- Whole-system local backend flow is working.
+- Deep local verification remains green; no regression appeared during certification.
+- Hosted notifications are available and functioning.
+- Hosted whole-system smoke including notifications is functioning.
+- Cleanup for hosted temporary rows is functioning.
+
+## What Is Not Reopened
+
+- This pass did not reopen broad exploration or create new speculative break tests.
+- No new regression appeared that required scope expansion.
+
+## Remaining Caveats
+
+- Hosted follow-up Supabase reads can be a bit slower than local checks, but certification-critical hosted verification completed successfully.
+
+## Certification Verdict
+
+- Backend is safe to freeze and hand off.
+- Final verdict: `GO`
