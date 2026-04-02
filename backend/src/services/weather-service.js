@@ -1,62 +1,60 @@
+const fs = require("fs");
+const path = require("path");
 const { getConfig } = require("../utils/config");
 
-const FALLBACK_FORECASTS = {
-  koramangala: {
-    avg_max_temp: 40,
-    avg_max_rain: 8,
-    avg_max_aqi: 214,
+const ZONES_SEED_PATH = path.resolve(__dirname, "../../seed/zones.json");
+
+function loadZones() {
+  return JSON.parse(fs.readFileSync(ZONES_SEED_PATH, "utf8"));
+}
+
+function buildFallbackForecast(zone) {
+  const cityTier = zone.city_tier || zone.tier || "T1";
+  const tierTempBase = { T1: 39.5, T2: 37.5, T3: 35.5 }[cityTier] || 38.0;
+  const riskRainBase = { low: 4, medium: 7, high: 10 }[zone.risk_class] || 6;
+  const riskAqiBase = { low: 165, medium: 220, high: 275 }[zone.risk_class] || 200;
+  const temperature = Number((tierTempBase + (zone.avg_dinner_earnings - 500) / 120).toFixed(1));
+  const rain = Number((riskRainBase + zone.avg_lunch_earnings / 180).toFixed(1));
+  const aqi = Number((riskAqiBase + (cityTier === "T1" ? 18 : cityTier === "T2" ? 8 : 0)).toFixed(1));
+
+  return {
+    avg_max_temp: temperature,
+    avg_max_rain: rain,
+    avg_max_aqi: aqi,
     daily: {
-      apparent_temperature_max: [38, 40, 39, 41, 40, 39, 38],
-      precipitation_sum: [0, 4, 16, 8, 0, 6, 2],
-      daily_max_aqi: [172, 214, 238, 286, 224, 205, 192],
+      apparent_temperature_max: [
+        Math.round(temperature - 2),
+        Math.round(temperature - 1),
+        Math.round(temperature),
+        Math.round(temperature + 1),
+        Math.round(temperature),
+        Math.round(temperature - 1),
+        Math.round(temperature - 2)
+      ],
+      precipitation_sum: [
+        Math.max(0, Math.round(rain - 4)),
+        Math.max(0, Math.round(rain - 2)),
+        Math.round(rain + 3),
+        Math.round(rain + 1),
+        Math.max(0, Math.round(rain - 3)),
+        Math.round(rain),
+        Math.max(0, Math.round(rain - 2))
+      ],
+      daily_max_aqi: [
+        Math.round(aqi - 28),
+        Math.round(aqi - 8),
+        Math.round(aqi + 12),
+        Math.round(aqi + 22),
+        Math.round(aqi + 6),
+        Math.round(aqi - 10),
+        Math.round(aqi - 18)
+      ],
       weather_code: [1, 2, 61, 63, 2, 61, 3]
     }
-  },
-  indiranagar: {
-    avg_max_temp: 38,
-    avg_max_rain: 5,
-    avg_max_aqi: 170,
-    daily: {
-      apparent_temperature_max: [36, 37, 39, 39, 38, 37, 36],
-      precipitation_sum: [0, 2, 10, 5, 0, 6, 1],
-      daily_max_aqi: [155, 172, 182, 188, 179, 168, 160],
-      weather_code: [1, 2, 61, 2, 2, 61, 1]
-    }
-  },
-  hsr_layout: {
-    avg_max_temp: 39,
-    avg_max_rain: 7,
-    avg_max_aqi: 210,
-    daily: {
-      apparent_temperature_max: [38, 39, 41, 40, 39, 38, 37],
-      precipitation_sum: [1, 4, 14, 10, 2, 8, 3],
-      daily_max_aqi: [182, 205, 234, 242, 228, 216, 201],
-      weather_code: [2, 3, 63, 63, 3, 61, 2]
-    }
-  },
-  whitefield: {
-    avg_max_temp: 41,
-    avg_max_rain: 9,
-    avg_max_aqi: 244,
-    daily: {
-      apparent_temperature_max: [40, 41, 42, 43, 42, 40, 39],
-      precipitation_sum: [2, 6, 18, 12, 4, 11, 5],
-      daily_max_aqi: [220, 248, 276, 292, 255, 241, 230],
-      weather_code: [2, 3, 63, 65, 61, 61, 3]
-    }
-  },
-  electronic_city: {
-    avg_max_temp: 42,
-    avg_max_rain: 10,
-    avg_max_aqi: 258,
-    daily: {
-      apparent_temperature_max: [41, 42, 43, 44, 42, 41, 40],
-      precipitation_sum: [2, 7, 20, 16, 5, 12, 6],
-      daily_max_aqi: [238, 262, 284, 301, 276, 254, 236],
-      weather_code: [2, 61, 63, 65, 63, 61, 3]
-    }
-  }
-};
+  };
+}
+
+const FALLBACK_FORECASTS = Object.fromEntries(loadZones().map((zone) => [zone.id, buildFallbackForecast(zone)]));
 
 function average(values, fallback) {
   if (!Array.isArray(values) || values.length === 0) {
@@ -89,7 +87,7 @@ class WeatherService {
   }
 
   async fetchWeeklyForecastSummary(zone) {
-    const fallback = FALLBACK_FORECASTS[zone.id] || FALLBACK_FORECASTS.koramangala;
+    const fallback = FALLBACK_FORECASTS[zone.id] || buildFallbackForecast(zone);
     const weatherUrl =
       `${this.config.openMeteoWeatherUrl}?latitude=${zone.lat}&longitude=${zone.lng}` +
       "&daily=temperature_2m_max,apparent_temperature_max,precipitation_sum,weather_code" +

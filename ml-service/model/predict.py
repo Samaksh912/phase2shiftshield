@@ -3,6 +3,7 @@ import json
 import os
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List
 
 import httpx
@@ -15,8 +16,10 @@ from .train import FEATURE_COLUMNS, METADATA_PATH, MODEL_PATH, train_model
 LOADING_FACTOR = float(os.getenv("PREMIUM_LOADING_FACTOR", "0.35"))
 OPEN_METEO_WEATHER_URL = os.getenv("OPEN_METEO_WEATHER_URL", "https://api.open-meteo.com/v1/forecast")
 OPEN_METEO_AQI_URL = os.getenv("OPEN_METEO_AQI_URL", "https://air-quality-api.open-meteo.com/v1/air-quality")
-PREMIUM_FLOOR = 15
-PREMIUM_CEILING = 150
+LEGACY_PREMIUM_FLOOR = 15
+LEGACY_PREMIUM_CEILING = 150
+TARGET_PREMIUM_FLOOR = 20
+TARGET_PREMIUM_CEILING = 50
 _CACHED_MODEL = None
 
 
@@ -26,68 +29,78 @@ class ZoneConfig:
     lat: float
     lng: float
     name: str
+    city_tier: str
+    risk_class: str
+    avg_lunch_earnings: int
+    avg_dinner_earnings: int
+
+ZONES_SEED_PATH = Path(__file__).resolve().parents[2] / "backend" / "seed" / "zones.json"
 
 
-ZONES = {
-    "koramangala": ZoneConfig("koramangala", 12.9352, 77.6245, "Koramangala"),
-    "indiranagar": ZoneConfig("indiranagar", 12.9784, 77.6408, "Indiranagar"),
-    "hsr_layout": ZoneConfig("hsr_layout", 12.9116, 77.6474, "HSR Layout"),
-    "whitefield": ZoneConfig("whitefield", 12.9698, 77.7500, "Whitefield"),
-    "electronic_city": ZoneConfig("electronic_city", 12.8399, 77.6770, "Electronic City"),
-}
+def load_zones() -> Dict[str, ZoneConfig]:
+    zone_rows = json.loads(ZONES_SEED_PATH.read_text())
+    return {
+        row["id"]: ZoneConfig(
+            id=row["id"],
+            lat=row["lat"],
+            lng=row["lng"],
+            name=row["name"],
+            city_tier=row.get("city_tier", row.get("tier", "T1")),
+            risk_class=row["risk_class"],
+            avg_lunch_earnings=row["avg_lunch_earnings"],
+            avg_dinner_earnings=row["avg_dinner_earnings"],
+        )
+        for row in zone_rows
+    }
+
+
+def build_fallback_forecast(zone: ZoneConfig) -> Dict[str, Any]:
+    tier_temp_base = {"T1": 39.5, "T2": 37.5, "T3": 35.5}.get(zone.city_tier, 38.0)
+    risk_rain_base = {"low": 4.0, "medium": 7.0, "high": 10.0}.get(zone.risk_class, 6.0)
+    risk_aqi_base = {"low": 165.0, "medium": 220.0, "high": 275.0}.get(zone.risk_class, 200.0)
+    temperature = round(tier_temp_base + (zone.avg_dinner_earnings - 500) / 120.0, 2)
+    rain = round(risk_rain_base + zone.avg_lunch_earnings / 180.0, 2)
+    aqi = round(risk_aqi_base + (18.0 if zone.city_tier == "T1" else 8.0 if zone.city_tier == "T2" else 0.0), 2)
+
+    return {
+        "avg_max_temp": temperature,
+        "avg_max_rain": rain,
+        "avg_max_aqi": aqi,
+        "daily": {
+            "apparent_temperature_max": [
+                round(temperature - 2),
+                round(temperature - 1),
+                round(temperature),
+                round(temperature + 1),
+                round(temperature),
+                round(temperature - 1),
+                round(temperature - 2),
+            ],
+            "precipitation_sum": [
+                max(0, round(rain - 4)),
+                max(0, round(rain - 2)),
+                round(rain + 3),
+                round(rain + 1),
+                max(0, round(rain - 3)),
+                round(rain),
+                max(0, round(rain - 2)),
+            ],
+            "daily_max_aqi": [
+                round(aqi - 28),
+                round(aqi - 8),
+                round(aqi + 12),
+                round(aqi + 22),
+                round(aqi + 6),
+                round(aqi - 10),
+                round(aqi - 18),
+            ],
+        },
+    }
+
+
+ZONES = load_zones()
 ZONE_ENCODING = {zone_id: index for index, zone_id in enumerate(ZONES.keys())}
-FALLBACK_FORECAST = {
-    "koramangala": {
-        "avg_max_temp": 40.0,
-        "avg_max_rain": 8.0,
-        "avg_max_aqi": 214.0,
-        "daily": {
-            "apparent_temperature_max": [38, 40, 39, 41, 40, 39, 38],
-            "precipitation_sum": [0, 4, 16, 8, 0, 6, 2],
-            "daily_max_aqi": [172, 214, 238, 286, 224, 205, 192],
-        },
-    },
-    "indiranagar": {
-        "avg_max_temp": 38.0,
-        "avg_max_rain": 4.8,
-        "avg_max_aqi": 176.0,
-        "daily": {
-            "apparent_temperature_max": [36, 37, 38, 39, 39, 38, 37],
-            "precipitation_sum": [0, 2, 10, 4, 0, 5, 1],
-            "daily_max_aqi": [154, 168, 176, 188, 179, 182, 165],
-        },
-    },
-    "hsr_layout": {
-        "avg_max_temp": 39.6,
-        "avg_max_rain": 7.4,
-        "avg_max_aqi": 224.0,
-        "daily": {
-            "apparent_temperature_max": [38, 39, 40, 41, 40, 39, 38],
-            "precipitation_sum": [1, 5, 15, 11, 3, 10, 4],
-            "daily_max_aqi": [186, 220, 241, 252, 236, 223, 210],
-        },
-    },
-    "whitefield": {
-        "avg_max_temp": 41.4,
-        "avg_max_rain": 9.6,
-        "avg_max_aqi": 258.0,
-        "daily": {
-            "apparent_temperature_max": [40, 41, 42, 43, 42, 41, 40],
-            "precipitation_sum": [2, 7, 18, 12, 4, 13, 6],
-            "daily_max_aqi": [228, 251, 275, 288, 270, 261, 233],
-        },
-    },
-    "electronic_city": {
-        "avg_max_temp": 42.1,
-        "avg_max_rain": 10.8,
-        "avg_max_aqi": 272.0,
-        "daily": {
-            "apparent_temperature_max": [41, 42, 43, 44, 43, 41, 40],
-            "precipitation_sum": [2, 8, 20, 15, 5, 14, 7],
-            "daily_max_aqi": [241, 270, 289, 304, 282, 268, 250],
-        },
-    },
-}
+FALLBACK_FORECAST = {zone_id: build_fallback_forecast(zone) for zone_id, zone in ZONES.items()}
 
 
 def get_season(week_of_year: int) -> int:
@@ -301,6 +314,16 @@ def build_summary(risk_band: str, top_factors: List[Dict[str, Any]]) -> str:
     return f"{prefix} {detail}".strip()
 
 
+def calibrate_weekly_premium(raw_total_premium: int) -> int:
+    bounded_premium = min(max(raw_total_premium, LEGACY_PREMIUM_FLOOR), LEGACY_PREMIUM_CEILING)
+    if LEGACY_PREMIUM_CEILING == LEGACY_PREMIUM_FLOOR:
+        return TARGET_PREMIUM_FLOOR
+
+    normalized = (bounded_premium - LEGACY_PREMIUM_FLOOR) / (LEGACY_PREMIUM_CEILING - LEGACY_PREMIUM_FLOOR)
+    calibrated = TARGET_PREMIUM_FLOOR + normalized * (TARGET_PREMIUM_CEILING - TARGET_PREMIUM_FLOOR)
+    return int(round(calibrated))
+
+
 async def predict_quote(payload: Dict[str, Any]) -> Dict[str, Any]:
     zone_id = payload["zone_id"]
     if zone_id not in ZONES:
@@ -338,14 +361,15 @@ async def predict_quote(payload: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     if shift_type == "both":
-        total_premium = shift_results["lunch"]["premium"] + shift_results["dinner"]["premium"]
+        raw_total_premium = shift_results["lunch"]["premium"] + shift_results["dinner"]["premium"]
         average_baseline = (lunch_baseline + dinner_baseline) / 2.0
     else:
-        total_premium = shift_results[shift_type]["premium"]
+        raw_total_premium = shift_results[shift_type]["premium"]
         average_baseline = shift_results[shift_type]["baseline"]
 
-    total_premium = min(max(total_premium, PREMIUM_FLOOR), PREMIUM_CEILING)
-    risk_score = round(min(total_premium / max(average_baseline * 0.5, 1), 1.0), 2)
+    total_premium = calibrate_weekly_premium(raw_total_premium)
+    bounded_risk_premium = min(max(raw_total_premium, LEGACY_PREMIUM_FLOOR), LEGACY_PREMIUM_CEILING)
+    risk_score = round(min(bounded_risk_premium / max(average_baseline * 0.5, 1), 1.0), 2)
     if risk_score < 0.33:
         risk_band = "low"
     elif risk_score < 0.66:

@@ -6,6 +6,7 @@ const {
   isBeforeDeadline,
   isMonday
 } = require("../utils/time");
+const { getUnderwritingState, isEligibleForPurchase } = require("../utils/underwriting");
 
 class QuoteService {
   constructor({ dataStore, mlClient, weatherService, nowProvider = () => new Date() }) {
@@ -29,13 +30,17 @@ class QuoteService {
     };
   }
 
-  getPurchaseBlockReason({ beforeDeadline, hasActiveDisruption }) {
+  getPurchaseBlockReason({ beforeDeadline, hasActiveDisruption, underwriting }) {
     if (hasActiveDisruption) {
       return "An active disruption event is detected in your zone. Policy purchase is temporarily unavailable.";
     }
 
     if (!beforeDeadline) {
       return "The purchase window for this policy week has closed.";
+    }
+
+    if (!isEligibleForPurchase(underwriting)) {
+      return underwriting.message;
     }
 
     return null;
@@ -93,6 +98,9 @@ class QuoteService {
       throw error;
     }
 
+    const platformRider = await this.dataStore.getMockPlatformRiderByPhone(rider.phone);
+    const underwriting = getUnderwritingState(platformRider);
+
     rider.lunch_baseline = rider.lunch_baseline || zone.avg_lunch_earnings;
     rider.dinner_baseline = rider.dinner_baseline || zone.avg_dinner_earnings;
 
@@ -120,10 +128,11 @@ class QuoteService {
     const validUntil = purchaseDeadline;
     const weekEnd = getWeekEnd(weekStart);
     const beforeDeadline = isBeforeDeadline(purchaseDeadline, now);
-    const canPurchase = beforeDeadline && !hasActiveDisruption;
+    const canPurchase = beforeDeadline && !hasActiveDisruption && isEligibleForPurchase(underwriting);
     const purchaseBlockReason = this.getPurchaseBlockReason({
       beforeDeadline,
-      hasActiveDisruption
+      hasActiveDisruption,
+      underwriting
     });
     const coverageBreakdown = this.buildCoverageBreakdown(rider);
 
@@ -155,6 +164,7 @@ class QuoteService {
         lunch_shift_max_payout: mlQuote.lunch_shift_max_payout,
         dinner_shift_max_payout: mlQuote.dinner_shift_max_payout,
         explanation,
+        underwriting,
         coverage_breakdown: coverageBreakdown,
         can_purchase: canPurchase,
         ...(canPurchase ? {} : { reason: purchaseBlockReason }),

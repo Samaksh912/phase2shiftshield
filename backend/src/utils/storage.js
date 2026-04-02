@@ -3,6 +3,7 @@ const path = require("path");
 const crypto = require("crypto");
 const { createClient } = require("@supabase/supabase-js");
 const { getConfig } = require("./config");
+const { normalizeActiveDaysLast30 } = require("./underwriting");
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -103,6 +104,34 @@ function normalizeNotificationRecord(notification) {
   };
 }
 
+function mergeSeedRecords(existingRecords, seedRecords, getKey) {
+  const existingMap = new Map(existingRecords.map((record) => [getKey(record), record]));
+  let changed = false;
+
+  for (const seedRecord of seedRecords) {
+    const key = getKey(seedRecord);
+    const existingRecord = existingMap.get(key);
+
+    if (!existingRecord) {
+      existingMap.set(key, seedRecord);
+      changed = true;
+      continue;
+    }
+
+    for (const [field, value] of Object.entries(seedRecord)) {
+      if (existingRecord[field] === undefined) {
+        existingRecord[field] = value;
+        changed = true;
+      }
+    }
+  }
+
+  return {
+    records: Array.from(existingMap.values()),
+    changed
+  };
+}
+
 class LocalDataStore {
   constructor(config = getConfig()) {
     this.config = config;
@@ -129,6 +158,22 @@ class LocalDataStore {
         changed = true;
       }
     }
+
+    const mergedZones = mergeSeedRecords(currentState.zones || [], baseState.zones, (zone) => zone.id);
+    currentState.zones = mergedZones.records;
+    changed = changed || mergedZones.changed;
+
+    const mergedRiders = mergeSeedRecords(currentState.riders || [], baseState.riders, (rider) => rider.id);
+    currentState.riders = mergedRiders.records;
+    changed = changed || mergedRiders.changed;
+
+    const mergedPlatformRiders = mergeSeedRecords(
+      currentState.mock_platform_riders || [],
+      baseState.mock_platform_riders,
+      (rider) => rider.phone
+    );
+    currentState.mock_platform_riders = mergedPlatformRiders.records;
+    changed = changed || mergedPlatformRiders.changed;
 
     if (changed) {
       this.writeStore(currentState);
@@ -165,6 +210,7 @@ class LocalDataStore {
         avg_lunch_earnings: rider.avg_lunch_earnings,
         avg_dinner_earnings: rider.avg_dinner_earnings,
         active_days_per_week: 6,
+        active_days_last_30: normalizeActiveDaysLast30(rider),
         last_active: rider.last_active,
         account_age_months: rider.account_age_months || 8
       })),
@@ -236,6 +282,18 @@ class LocalDataStore {
           rider_id: "22222222-2222-4222-8222-222222222222",
           balance: 50,
           updated_at: "2026-03-30T10:00:00Z"
+        },
+        {
+          id: "wallet-meera",
+          rider_id: "33333333-3333-4333-8333-444444444444",
+          balance: 240,
+          updated_at: "2026-03-31T18:00:00Z"
+        },
+        {
+          id: "wallet-pooja",
+          rider_id: "44444444-4444-4444-8444-555555555555",
+          balance: 220,
+          updated_at: "2026-03-31T18:05:00Z"
         }
       ],
       wallet_transactions: [

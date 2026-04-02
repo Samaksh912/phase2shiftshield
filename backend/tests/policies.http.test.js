@@ -45,6 +45,13 @@ async function seedQuote(dataStore, {
   });
 }
 
+function setActiveDaysLast30(dataStore, phone, activeDaysLast30) {
+  const store = dataStore.readStore();
+  const platformRider = store.mock_platform_riders.find((rider) => rider.phone === phone);
+  platformRider.active_days_last_30 = activeDaysLast30;
+  dataStore.writeStore(store);
+}
+
 test("POST /api/policies/create debits wallet and creates a scheduled policy", async () => {
   const { dataStore } = createTestDataStore();
   const walletService = new WalletService({ dataStore });
@@ -206,6 +213,186 @@ test("POST /api/policies/create returns contract fields for insufficient wallet 
     premium_required: 80,
     shortfall: 30,
     message: "Insufficient wallet balance. Please top up ₹30 or choose direct payment."
+  });
+});
+
+test("POST /api/policies/create still rejects expired quotes for eligible riders", async () => {
+  const { dataStore } = createTestDataStore();
+  setActiveDaysLast30(dataStore, "9876543210", 9);
+  const walletService = new WalletService({ dataStore });
+  const policyService = new PolicyService({
+    dataStore,
+    walletService,
+    nowProvider: () => new Date("2026-04-04T12:00:00Z")
+  });
+  const app = buildApp({ dataStore, walletService, policyService });
+  const token = createAuthToken("11111111-1111-4111-8111-111111111111", "9876543210");
+
+  const quote = await seedQuote(dataStore, {
+    riderId: "11111111-1111-4111-8111-111111111111",
+    zoneId: "koramangala",
+    weekStart: "2026-04-06",
+    shiftsCovered: "both",
+    premium: 60,
+    payoutCap: 5280,
+    validUntil: "2026-04-03T23:59:00+05:30"
+  });
+
+  const response = await invokeApp(app, {
+    method: "POST",
+    url: "/api/policies/create",
+    headers: {
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json"
+    },
+    body: {
+      quote_id: quote.id,
+      payment_method: "direct"
+    }
+  });
+
+  assert.equal(response.status, 400);
+  assert.deepEqual(response.body, {
+    error: "quote_expired",
+    message: "This quote has expired and can no longer be purchased"
+  });
+});
+
+test("POST /api/policies/create rejects insufficient_history underwriting states", async () => {
+  const { dataStore } = createTestDataStore();
+  setActiveDaysLast30(dataStore, "9876543210", 6);
+  const walletService = new WalletService({ dataStore });
+  const policyService = new PolicyService({
+    dataStore,
+    walletService,
+    nowProvider: () => new Date("2026-04-04T12:00:00Z")
+  });
+  const app = buildApp({ dataStore, walletService, policyService });
+  const token = createAuthToken("11111111-1111-4111-8111-111111111111", "9876543210");
+
+  const quote = await seedQuote(dataStore, {
+    riderId: "11111111-1111-4111-8111-111111111111",
+    zoneId: "koramangala",
+    weekStart: "2026-04-06",
+    shiftsCovered: "both",
+    premium: 60,
+    payoutCap: 5280,
+    validUntil: "2026-04-05T23:59:00+05:30"
+  });
+
+  const response = await invokeApp(app, {
+    method: "POST",
+    url: "/api/policies/create",
+    headers: {
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json"
+    },
+    body: {
+      quote_id: quote.id,
+      payment_method: "direct"
+    }
+  });
+
+  assert.equal(response.status, 409);
+  assert.equal(response.body.error, "insufficient_history");
+  assert.equal(
+    response.body.message,
+    "At least 7 active delivery days in the last 30 days are required to purchase or renew coverage."
+  );
+});
+
+test("POST /api/policies/create rejects a seeded ineligible non-Bengaluru rider due to underwriting", async () => {
+  const { dataStore } = createTestDataStore();
+  const walletService = new WalletService({ dataStore });
+  const policyService = new PolicyService({
+    dataStore,
+    walletService,
+    nowProvider: () => new Date("2026-04-04T12:00:00Z")
+  });
+  const app = buildApp({ dataStore, walletService, policyService });
+  const token = createAuthToken("33333333-3333-4333-8333-444444444444", "9988776655");
+
+  const quote = await seedQuote(dataStore, {
+    riderId: "33333333-3333-4333-8333-444444444444",
+    zoneId: "pune_hinjewadi",
+    weekStart: "2026-04-06",
+    shiftsCovered: "both",
+    premium: 34,
+    payoutCap: 4920,
+    validUntil: "2026-04-05T23:59:00+05:30"
+  });
+
+  const response = await invokeApp(app, {
+    method: "POST",
+    url: "/api/policies/create",
+    headers: {
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json"
+    },
+    body: {
+      quote_id: quote.id,
+      payment_method: "direct"
+    }
+  });
+
+  assert.equal(response.status, 409);
+  assert.equal(response.body.error, "insufficient_history");
+  assert.equal(
+    response.body.message,
+    "At least 7 active delivery days in the last 30 days are required to purchase or renew coverage."
+  );
+});
+
+test("POST /api/policies/create still rejects duplicate policies for eligible riders", async () => {
+  const { dataStore } = createTestDataStore();
+  setActiveDaysLast30(dataStore, "9876543210", 9);
+  const walletService = new WalletService({ dataStore });
+  const policyService = new PolicyService({
+    dataStore,
+    walletService,
+    nowProvider: () => new Date("2026-04-04T12:00:00Z")
+  });
+  const app = buildApp({ dataStore, walletService, policyService });
+  const token = createAuthToken("11111111-1111-4111-8111-111111111111", "9876543210");
+
+  const quote = await seedQuote(dataStore, {
+    riderId: "11111111-1111-4111-8111-111111111111",
+    zoneId: "koramangala",
+    weekStart: "2026-04-06",
+    shiftsCovered: "both",
+    premium: 60,
+    payoutCap: 5280,
+    validUntil: "2026-04-05T23:59:00+05:30"
+  });
+
+  await dataStore.createPolicy({
+    rider_id: "11111111-1111-4111-8111-111111111111",
+    quote_id: null,
+    week_start: "2026-04-06",
+    week_end: "2026-04-12",
+    shifts_covered: "both",
+    premium_paid: 60,
+    payout_cap: 5280,
+    status: "scheduled"
+  });
+
+  const response = await invokeApp(app, {
+    method: "POST",
+    url: "/api/policies/create",
+    headers: {
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json"
+    },
+    body: {
+      quote_id: quote.id,
+      payment_method: "direct"
+    }
+  });
+
+  assert.equal(response.status, 409);
+  assert.deepEqual(response.body, {
+    error: "policy_exists",
+    message: "A policy already exists for this rider and week"
   });
 });
 

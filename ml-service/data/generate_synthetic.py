@@ -1,4 +1,5 @@
 import asyncio
+import json
 import math
 import os
 from dataclasses import dataclass
@@ -23,20 +24,36 @@ USE_SYNTHETIC_WEATHER_ONLY = os.getenv("USE_SYNTHETIC_WEATHER_ONLY", "false").lo
 @dataclass(frozen=True)
 class Zone:
     id: str
+    name: str
     lat: float
     lng: float
     avg_lunch_earnings: int
     avg_dinner_earnings: int
     risk_class: str
+    city_tier: str
 
 
-ZONES = [
-    Zone("koramangala", 12.9352, 77.6245, 420, 680, "medium"),
-    Zone("indiranagar", 12.9784, 77.6408, 450, 720, "low"),
-    Zone("hsr_layout", 12.9116, 77.6474, 380, 620, "medium"),
-    Zone("whitefield", 12.9698, 77.7500, 350, 580, "high"),
-    Zone("electronic_city", 12.8399, 77.6770, 330, 560, "high"),
-]
+ZONES_SEED_PATH = ROOT.parents[0] / "backend" / "seed" / "zones.json"
+
+
+def load_zones() -> list[Zone]:
+    zone_rows = json.loads(ZONES_SEED_PATH.read_text())
+    return [
+        Zone(
+            id=row["id"],
+            name=row["name"],
+            lat=row["lat"],
+            lng=row["lng"],
+            avg_lunch_earnings=row["avg_lunch_earnings"],
+            avg_dinner_earnings=row["avg_dinner_earnings"],
+            risk_class=row["risk_class"],
+            city_tier=row.get("city_tier", row.get("tier", "T1")),
+        )
+        for row in zone_rows
+    ]
+
+
+ZONES = load_zones()
 ZONE_ENCODING = {zone.id: index for index, zone in enumerate(ZONES)}
 START_DATE = date(2024, 4, 1)
 END_DATE = date(2026, 3, 31)
@@ -53,7 +70,9 @@ def get_season(week_of_year: int) -> int:
 
 
 def zone_risk_multiplier(zone: Zone) -> float:
-    return {"low": 0.88, "medium": 1.0, "high": 1.16}[zone.risk_class]
+    base = {"low": 0.88, "medium": 1.0, "high": 1.16}[zone.risk_class]
+    tier_adjustment = {"T1": 0.06, "T2": 0.02, "T3": -0.04}.get(zone.city_tier, 0.0)
+    return base + tier_adjustment
 
 
 def iter_dates(start: date, end: date):

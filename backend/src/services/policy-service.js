@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const { getCurrentISTDate, getPurchaseDeadline, getWeekEnd, isBeforeDeadline } = require("../utils/time");
 const { safelyCreateNotification } = require("../utils/notifications");
+const { getUnderwritingState, isEligibleForPurchase } = require("../utils/underwriting");
 
 function buildError({ message, code, statusCode }) {
   const error = new Error(message);
@@ -103,6 +104,9 @@ class PolicyService {
       });
     }
 
+    const platformRider = await this.dataStore.getMockPlatformRiderByPhone(rider.phone);
+    const underwriting = getUnderwritingState(platformRider);
+
     const purchaseDeadline = getPurchaseDeadline(quote.week_start);
     const effectiveValidUntil = quote.valid_until || purchaseDeadline;
     if (!isBeforeDeadline(effectiveValidUntil, now) || !isBeforeDeadline(purchaseDeadline, now)) {
@@ -111,6 +115,16 @@ class PolicyService {
         code: "quote_expired",
         statusCode: 400
       });
+    }
+
+    if (!isEligibleForPurchase(underwriting)) {
+      const underwritingError = buildError({
+        message: underwriting.message,
+        code: underwriting.status,
+        statusCode: 409
+      });
+      underwritingError.active_days_last_30 = underwriting.active_days_last_30;
+      throw underwritingError;
     }
 
     const existingPolicy = await this.dataStore.getPolicyByRiderAndWeekStart(riderId, quote.week_start);
