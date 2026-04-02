@@ -1,0 +1,23 @@
+{
+  "defaults": {
+    "temp": 42,
+    "aqi": 301,
+    "rain": 15
+  },
+  "city_tier_overrides": {
+    "T2": {
+      "aqi": 280,
+      "rain": 14
+    },
+    "T3": {
+      "temp": 40,
+      "aqi": 220,
+      "rain": 12
+    }
+  },
+  "zone_overrides": {
+    "whitefield": {
+      "aqi": 290
+    }
+  }
+}

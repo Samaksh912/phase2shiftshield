@@ -1,10 +1,5 @@
 const { getCurrentISTDate, getNextMonday, getPurchaseDeadline, isBeforeDeadline } = require("../utils/time");
-
-const THRESHOLDS = {
-  temp: 42,
-  aqi: 301,
-  rain: 15
-};
+const { resolveThresholdsForZone } = require("../utils/thresholds");
 
 class DashboardService {
   constructor({ dataStore, weatherService, nowProvider = () => new Date() }) {
@@ -13,17 +8,18 @@ class DashboardService {
     this.nowProvider = nowProvider;
   }
 
-  buildWeatherStatus({ currentTemp, currentAqi, currentRainMm }) {
+  buildWeatherStatus(zone, { currentTemp, currentAqi, currentRainMm }) {
+    const thresholds = resolveThresholdsForZone(zone);
     const breached =
-      currentTemp >= THRESHOLDS.temp || currentAqi >= THRESHOLDS.aqi || currentRainMm >= THRESHOLDS.rain;
+      currentTemp >= thresholds.temp || currentAqi >= thresholds.aqi || currentRainMm >= thresholds.rain;
     if (breached) {
       return "threshold_breached";
     }
 
     const elevated =
-      currentTemp >= THRESHOLDS.temp * 0.7 ||
-      currentAqi >= THRESHOLDS.aqi * 0.7 ||
-      currentRainMm >= THRESHOLDS.rain * 0.7;
+      currentTemp >= thresholds.temp * 0.7 ||
+      currentAqi >= thresholds.aqi * 0.7 ||
+      currentRainMm >= thresholds.rain * 0.7;
 
     return elevated ? "elevated" : "normal";
   }
@@ -126,7 +122,7 @@ class DashboardService {
         current_temp: currentTemp,
         current_aqi: currentAqi,
         current_rain_mm: currentRainMm,
-        status: this.buildWeatherStatus({ currentTemp, currentAqi, currentRainMm }),
+        status: this.buildWeatherStatus(zone, { currentTemp, currentAqi, currentRainMm }),
         last_updated: now.toISOString()
       },
       recent_claims: claims.slice(0, 3).map((claim) => ({

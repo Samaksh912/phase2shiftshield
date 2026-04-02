@@ -17,7 +17,9 @@ function getConfig() {
     supabaseUrl: process.env.SUPABASE_URL || "",
     supabaseServiceKey: process.env.SUPABASE_SERVICE_KEY || "",
     localStorePath: path.join(backendRoot, "data", "local-db.json"),
+    citiesSeedPath: path.join(backendRoot, "seed", "cities.json"),
     zonesSeedPath: path.join(backendRoot, "seed", "zones.json"),
+    thresholdsSeedPath: path.join(backendRoot, "seed", "thresholds.json"),
     ridersSeedPath: path.join(backendRoot, "seed", "mock-riders.json")
   };
 }

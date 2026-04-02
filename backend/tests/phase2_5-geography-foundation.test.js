@@ -11,6 +11,16 @@ test("Phase 2.5 seed geography loads at least 10 supported zones", async () => {
   assert.ok(store.zones.length >= 10);
 });
 
+test("Phase 3 hierarchy seed exposes cities and valid city-linked zones", async () => {
+  const { dataStore } = createTestDataStore();
+  const store = dataStore.readStore();
+  const citiesById = new Map(store.cities.map((city) => [city.id, city]));
+
+  assert.ok(store.cities.length >= 8);
+  assert.ok(store.zones.every((zone) => typeof zone.city_id === "string" && citiesById.has(zone.city_id)));
+  assert.equal(store.zones.filter((zone) => zone.city_id === "bengaluru").length, 5);
+});
+
 test("Phase 2.5 seed geography includes explicit city tier metadata", async () => {
   const { dataStore } = createTestDataStore();
   const store = dataStore.readStore();
@@ -33,6 +43,25 @@ test("An eligible non-T1 seeded rider is visible in the effective runtime store"
   assert.equal(platformRider.platform, "swiggy");
   assert.equal(platformRider.active_days_last_30, 8);
   assert.equal(zone.city_tier, "T3");
+});
+
+test("A seeded T2 rider is visible and demo-ready in the effective runtime store", async () => {
+  const { dataStore } = createTestDataStore();
+  const store = dataStore.readStore();
+
+  const rider = store.riders.find((entry) => entry.id === "55555555-5555-4555-8555-666666666666");
+  const platformRider = store.mock_platform_riders.find((entry) => entry.phone === "9451203344");
+  const zone = store.zones.find((entry) => entry.id === "lucknow_gomti_nagar");
+  const wallet = store.wallets.find((entry) => entry.rider_id === "55555555-5555-4555-8555-666666666666");
+
+  assert.ok(rider);
+  assert.ok(platformRider);
+  assert.ok(wallet);
+  assert.equal(rider.platform, "zomato");
+  assert.equal(rider.zone_id, "lucknow_gomti_nagar");
+  assert.equal(platformRider.active_days_last_30, 8);
+  assert.equal(zone.city_tier, "T2");
+  assert.equal(wallet.balance, 210);
 });
 
 test("Swiggy/Zomato platform seeds remain compatible with the expanded geography quote path", async () => {

@@ -83,3 +83,41 @@ test("GET /api/dashboard returns rider-scoped policy, wallet, weather, and claim
   assert.equal(response.body.recent_claims[0].trigger_type, "aqi");
   assert.equal(response.body.next_week_quote_available, true);
 });
+
+test("GET /api/dashboard uses geography-specific thresholds for weather status", async () => {
+  const { dataStore } = createTestDataStore();
+  const dashboardService = new DashboardService({
+    dataStore,
+    weatherService: {
+      async fetchWeeklyForecastSummary() {
+        return {
+          source: "test",
+          avg_max_temp: 34,
+          avg_max_rain: 4,
+          avg_max_aqi: 230,
+          daily: {
+            apparent_temperature_max: [34],
+            precipitation_sum: [4],
+            daily_max_aqi: [230]
+          }
+        };
+      }
+    },
+    nowProvider: () => new Date("2026-04-01T12:00:00Z")
+  });
+  const app = buildApp({ dataStore, dashboardService });
+  const token = createAuthToken("44444444-4444-4444-8444-555555555555", "9345678123");
+
+  const response = await invokeApp(app, {
+    method: "GET",
+    url: "/api/dashboard",
+    headers: {
+      authorization: `Bearer ${token}`
+    }
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(response.body.rider.zone_name, "Patrapada");
+  assert.equal(response.body.zone_weather.current_aqi, 230);
+  assert.equal(response.body.zone_weather.status, "threshold_breached");
+});

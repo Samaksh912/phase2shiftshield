@@ -1,11 +1,28 @@
-function mapTriggerToConditionA(triggerType, value) {
+const { DISRUPTION_DURATION_MINUTES, getTriggerThreshold, resolveThresholdsForZone } = require("../utils/thresholds");
+
+function mapTriggerToConditionA(triggerType, value, thresholds) {
   if (triggerType === "aqi") {
-    return { aqi_value: value, threshold: 301, duration_minutes: 135, value };
+    return {
+      aqi_value: value,
+      threshold: getTriggerThreshold(triggerType, thresholds),
+      duration_minutes: DISRUPTION_DURATION_MINUTES.aqi,
+      value
+    };
   }
   if (triggerType === "rain") {
-    return { precipitation_mm: value, threshold: 15, duration_minutes: 45, value };
+    return {
+      precipitation_mm: value,
+      threshold: getTriggerThreshold(triggerType, thresholds),
+      duration_minutes: DISRUPTION_DURATION_MINUTES.rain,
+      value
+    };
   }
-  return { apparent_temp: value, threshold: 42, duration_minutes: 120, value };
+  return {
+    apparent_temp: value,
+    threshold: getTriggerThreshold(triggerType, thresholds),
+    duration_minutes: DISRUPTION_DURATION_MINUTES.heat,
+    value
+  };
 }
 
 function defaultConditionB() {
@@ -81,6 +98,7 @@ class AdminService {
 
     const payoutPercent = payload.payout_percent ?? mapSeverityToPayout(payload.severity_level || 2);
     const severityLevel = payload.severity_level || (payoutPercent >= 56 ? 3 : payoutPercent >= 36 ? 2 : 1);
+    const thresholds = resolveThresholdsForZone(zone);
 
     const triggerEvent = await this.dataStore.createTriggerEvent({
       zone_id: zoneId,
@@ -89,7 +107,7 @@ class AdminService {
       payout_percent: payoutPercent,
       shift_type: shiftType,
       condition_a_data: {
-        ...mapTriggerToConditionA(triggerType, payload.value),
+        ...mapTriggerToConditionA(triggerType, payload.value, thresholds),
         zone_name: zone.name
       },
       condition_b_data: payload.condition_b || defaultConditionB()

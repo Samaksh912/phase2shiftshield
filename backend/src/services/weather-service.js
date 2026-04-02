@@ -2,10 +2,35 @@ const fs = require("fs");
 const path = require("path");
 const { getConfig } = require("../utils/config");
 
+const CITIES_SEED_PATH = path.resolve(__dirname, "../../seed/cities.json");
 const ZONES_SEED_PATH = path.resolve(__dirname, "../../seed/zones.json");
 
+function loadCities() {
+  const cities = JSON.parse(fs.readFileSync(CITIES_SEED_PATH, "utf8"));
+  return new Map(cities.map((city) => [city.id, city]));
+}
+
 function loadZones() {
-  return JSON.parse(fs.readFileSync(ZONES_SEED_PATH, "utf8"));
+  const citiesById = loadCities();
+  const zones = JSON.parse(fs.readFileSync(ZONES_SEED_PATH, "utf8"));
+
+  return zones.map((zone) => {
+    const city = citiesById.get(zone.city_id);
+    if (!city) {
+      throw new Error(`Zone ${zone.id} references unknown city_id ${zone.city_id}`);
+    }
+
+    return {
+      ...zone,
+      city: {
+        id: city.id,
+        name: city.name,
+        state: city.state,
+        city_tier: city.city_tier
+      },
+      city_tier: zone.city_tier || city.city_tier
+    };
+  });
 }
 
 function buildFallbackForecast(zone) {

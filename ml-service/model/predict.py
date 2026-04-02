@@ -20,12 +20,28 @@ LEGACY_PREMIUM_FLOOR = 15
 LEGACY_PREMIUM_CEILING = 150
 TARGET_PREMIUM_FLOOR = 20
 TARGET_PREMIUM_CEILING = 50
+RAW_SIGNAL_WEIGHT = 0.45
+TIER_BASE_SCORE = {"T1": 0.16, "T2": 0.08, "T3": 0.02}
+ZONE_RISK_BASE_SCORE = {"high": 0.20, "medium": 0.10, "low": 0.00}
+WEATHER_DYNAMIC_WEIGHT = 0.18
 _CACHED_MODEL = None
+
+
+@dataclass(frozen=True)
+class CityConfig:
+    id: str
+    name: str
+    state: str
+    city_tier: str
+    lat: float
+    lng: float
 
 
 @dataclass(frozen=True)
 class ZoneConfig:
     id: str
+    city_id: str
+    city_name: str
     lat: float
     lng: float
     name: str
@@ -34,24 +50,48 @@ class ZoneConfig:
     avg_lunch_earnings: int
     avg_dinner_earnings: int
 
+CITY_SEED_PATH = Path(__file__).resolve().parents[2] / "backend" / "seed" / "cities.json"
 ZONES_SEED_PATH = Path(__file__).resolve().parents[2] / "backend" / "seed" / "zones.json"
 
 
-def load_zones() -> Dict[str, ZoneConfig]:
-    zone_rows = json.loads(ZONES_SEED_PATH.read_text())
+def load_cities() -> Dict[str, CityConfig]:
+    city_rows = json.loads(CITY_SEED_PATH.read_text())
     return {
-        row["id"]: ZoneConfig(
+        row["id"]: CityConfig(
             id=row["id"],
+            name=row["name"],
+            state=row["state"],
+            city_tier=row.get("city_tier", "T1"),
+            lat=row["lat"],
+            lng=row["lng"],
+        )
+        for row in city_rows
+    }
+
+
+def load_zones() -> Dict[str, ZoneConfig]:
+    cities = load_cities()
+    zone_rows = json.loads(ZONES_SEED_PATH.read_text())
+    zones: Dict[str, ZoneConfig] = {}
+    for row in zone_rows:
+        city_id = row["city_id"]
+        city = cities.get(city_id)
+        if city is None:
+            raise ValueError(f"Zone {row['id']} references unknown city_id {city_id}")
+
+        zones[row["id"]] = ZoneConfig(
+            id=row["id"],
+            city_id=city_id,
+            city_name=city.name,
             lat=row["lat"],
             lng=row["lng"],
             name=row["name"],
-            city_tier=row.get("city_tier", row.get("tier", "T1")),
+            city_tier=row.get("city_tier", row.get("tier", city.city_tier)),
             risk_class=row["risk_class"],
             avg_lunch_earnings=row["avg_lunch_earnings"],
             avg_dinner_earnings=row["avg_dinner_earnings"],
         )
-        for row in zone_rows
-    }
+    return zones
 
 
 def build_fallback_forecast(zone: ZoneConfig) -> Dict[str, Any]:
@@ -314,14 +354,51 @@ def build_summary(risk_band: str, top_factors: List[Dict[str, Any]]) -> str:
     return f"{prefix} {detail}".strip()
 
 
-def calibrate_weekly_premium(raw_total_premium: int) -> int:
+def clamp(value: float, minimum: float, maximum: float) -> float:
+    return max(minimum, min(value, maximum))
+
+
+def normalized_legacy_premium_signal(raw_total_premium: int) -> float:
     bounded_premium = min(max(raw_total_premium, LEGACY_PREMIUM_FLOOR), LEGACY_PREMIUM_CEILING)
     if LEGACY_PREMIUM_CEILING == LEGACY_PREMIUM_FLOOR:
-        return TARGET_PREMIUM_FLOOR
+        return 0.0
 
-    normalized = (bounded_premium - LEGACY_PREMIUM_FLOOR) / (LEGACY_PREMIUM_CEILING - LEGACY_PREMIUM_FLOOR)
-    calibrated = TARGET_PREMIUM_FLOOR + normalized * (TARGET_PREMIUM_CEILING - TARGET_PREMIUM_FLOOR)
-    return int(round(calibrated))
+    return (bounded_premium - LEGACY_PREMIUM_FLOOR) / (LEGACY_PREMIUM_CEILING - LEGACY_PREMIUM_FLOOR)
+
+
+def dynamic_weather_score(forecast: Dict[str, Any], recent_trigger_count: int) -> float:
+    heat_score = clamp((forecast["avg_max_temp"] - 34.0) / 10.0, 0.0, 1.0)
+    rain_score = clamp((forecast["avg_max_rain"] - 2.0) / 18.0, 0.0, 1.0)
+    aqi_score = clamp((forecast["avg_max_aqi"] - 120.0) / 220.0, 0.0, 1.0)
+    trigger_score = clamp(recent_trigger_count / 3.0, 0.0, 1.0)
+    return (
+        heat_score * 0.28
+        + rain_score * 0.24
+        + aqi_score * 0.34
+        + trigger_score * 0.14
+    )
+
+
+def pricing_score_for_zone(
+    zone: ZoneConfig,
+    raw_total_premium: int,
+    forecast: Dict[str, Any],
+    recent_trigger_count: int,
+) -> float:
+    raw_signal = normalized_legacy_premium_signal(raw_total_premium)
+    return clamp(
+        raw_signal * RAW_SIGNAL_WEIGHT
+        + TIER_BASE_SCORE.get(zone.city_tier, TIER_BASE_SCORE["T3"])
+        + ZONE_RISK_BASE_SCORE.get(zone.risk_class, ZONE_RISK_BASE_SCORE["medium"])
+        + dynamic_weather_score(forecast, recent_trigger_count) * WEATHER_DYNAMIC_WEIGHT,
+        0.0,
+        1.0,
+    )
+
+
+def premium_from_pricing_score(score: float) -> int:
+    premium_span = TARGET_PREMIUM_CEILING - TARGET_PREMIUM_FLOOR
+    return int(round(TARGET_PREMIUM_FLOOR + clamp(score, 0.0, 1.0) * premium_span))
 
 
 async def predict_quote(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -362,17 +439,16 @@ async def predict_quote(payload: Dict[str, Any]) -> Dict[str, Any]:
 
     if shift_type == "both":
         raw_total_premium = shift_results["lunch"]["premium"] + shift_results["dinner"]["premium"]
-        average_baseline = (lunch_baseline + dinner_baseline) / 2.0
     else:
         raw_total_premium = shift_results[shift_type]["premium"]
-        average_baseline = shift_results[shift_type]["baseline"]
 
-    total_premium = calibrate_weekly_premium(raw_total_premium)
-    bounded_risk_premium = min(max(raw_total_premium, LEGACY_PREMIUM_FLOOR), LEGACY_PREMIUM_CEILING)
-    risk_score = round(min(bounded_risk_premium / max(average_baseline * 0.5, 1), 1.0), 2)
-    if risk_score < 0.33:
+    zone = ZONES[zone_id]
+    pricing_score = pricing_score_for_zone(zone, raw_total_premium, forecast, recent_trigger_count)
+    total_premium = premium_from_pricing_score(pricing_score)
+    risk_score = round(pricing_score, 2)
+    if risk_score < 0.34:
         risk_band = "low"
-    elif risk_score < 0.66:
+    elif risk_score < 0.67:
         risk_band = "medium"
     else:
         risk_band = "high"

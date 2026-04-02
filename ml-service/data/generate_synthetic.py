@@ -22,8 +22,20 @@ USE_SYNTHETIC_WEATHER_ONLY = os.getenv("USE_SYNTHETIC_WEATHER_ONLY", "false").lo
 
 
 @dataclass(frozen=True)
+class City:
+    id: str
+    name: str
+    state: str
+    city_tier: str
+    lat: float
+    lng: float
+
+
+@dataclass(frozen=True)
 class Zone:
     id: str
+    city_id: str
+    city_name: str
     name: str
     lat: float
     lng: float
@@ -33,24 +45,49 @@ class Zone:
     city_tier: str
 
 
+CITY_SEED_PATH = ROOT.parents[0] / "backend" / "seed" / "cities.json"
 ZONES_SEED_PATH = ROOT.parents[0] / "backend" / "seed" / "zones.json"
 
 
-def load_zones() -> list[Zone]:
-    zone_rows = json.loads(ZONES_SEED_PATH.read_text())
-    return [
-        Zone(
+def load_cities() -> dict[str, City]:
+    city_rows = json.loads(CITY_SEED_PATH.read_text())
+    return {
+        row["id"]: City(
             id=row["id"],
             name=row["name"],
+            state=row["state"],
+            city_tier=row.get("city_tier", "T1"),
             lat=row["lat"],
             lng=row["lng"],
-            avg_lunch_earnings=row["avg_lunch_earnings"],
-            avg_dinner_earnings=row["avg_dinner_earnings"],
-            risk_class=row["risk_class"],
-            city_tier=row.get("city_tier", row.get("tier", "T1")),
         )
-        for row in zone_rows
-    ]
+        for row in city_rows
+    }
+
+
+def load_zones() -> list[Zone]:
+    cities = load_cities()
+    zone_rows = json.loads(ZONES_SEED_PATH.read_text())
+    zones: list[Zone] = []
+    for row in zone_rows:
+        city_id = row["city_id"]
+        city = cities.get(city_id)
+        if city is None:
+            raise ValueError(f"Zone {row['id']} references unknown city_id {city_id}")
+        zones.append(
+            Zone(
+                id=row["id"],
+                city_id=city_id,
+                city_name=city.name,
+                name=row["name"],
+                lat=row["lat"],
+                lng=row["lng"],
+                avg_lunch_earnings=row["avg_lunch_earnings"],
+                avg_dinner_earnings=row["avg_dinner_earnings"],
+                risk_class=row["risk_class"],
+                city_tier=row.get("city_tier", row.get("tier", city.city_tier)),
+            )
+        )
+    return zones
 
 
 ZONES = load_zones()

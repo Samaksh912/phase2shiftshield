@@ -7,6 +7,7 @@ const { buildPoliciesRouter } = require("./routes/policies");
 const { buildDashboardRouter } = require("./routes/dashboard");
 const { buildNotificationsRouter } = require("./routes/notifications");
 const { buildAdminRouter } = require("./routes/admin");
+const { buildCitiesRouter } = require("./routes/cities");
 const { QuoteService } = require("./services/quote-service");
 const { MLClient } = require("./services/ml-client");
 const { WeatherService } = require("./services/weather-service");
@@ -17,6 +18,7 @@ const { AdminService } = require("./services/admin-service");
 const { PolicyService } = require("./services/policy-service");
 const { DashboardService } = require("./services/dashboard-service");
 const { NotificationService } = require("./services/notification-service");
+const { CitiesService } = require("./services/cities-service");
 const { createDataStore } = require("./utils/storage");
 
 function buildApp(overrides = {}) {
@@ -39,6 +41,8 @@ function buildApp(overrides = {}) {
     overrides.policyService || new PolicyService({ dataStore, walletService, notificationService });
   const dashboardService =
     overrides.dashboardService || new DashboardService({ dataStore, weatherService });
+  const citiesService =
+    overrides.citiesService || new CitiesService({ dataStore });
 
   app.use(express.json());
 
@@ -49,6 +53,7 @@ function buildApp(overrides = {}) {
     });
   });
 
+  app.use("/api/cities", buildCitiesRouter({ citiesService }));
   app.use("/api/quotes", authMiddleware(), buildQuotesRouter({ quoteService }));
   app.use("/api/policies", authMiddleware(), buildPoliciesRouter({ policyService }));
   app.use("/api/claims", authMiddleware(), buildClaimsRouter({ claimsReadService }));

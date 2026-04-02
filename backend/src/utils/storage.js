@@ -104,6 +104,21 @@ function normalizeNotificationRecord(notification) {
   };
 }
 
+function normalizeCityRecord(city) {
+  if (!city) {
+    return null;
+  }
+
+  return {
+    id: city.id,
+    name: city.name,
+    state: city.state,
+    city_tier: city.city_tier,
+    lat: city.lat,
+    lng: city.lng
+  };
+}
+
 function mergeSeedRecords(existingRecords, seedRecords, getKey) {
   const existingMap = new Map(existingRecords.map((record) => [getKey(record), record]));
   let changed = false;
@@ -159,6 +174,10 @@ class LocalDataStore {
       }
     }
 
+    const mergedCities = mergeSeedRecords(currentState.cities || [], baseState.cities || [], (city) => city.id);
+    currentState.cities = mergedCities.records;
+    changed = changed || mergedCities.changed;
+
     const mergedZones = mergeSeedRecords(currentState.zones || [], baseState.zones, (zone) => zone.id);
     currentState.zones = mergedZones.records;
     changed = changed || mergedZones.changed;
@@ -181,6 +200,7 @@ class LocalDataStore {
   }
 
   buildInitialState() {
+    const cities = readJson(this.config.citiesSeedPath);
     const zones = readJson(this.config.zonesSeedPath);
     const mockRiders = readJson(this.config.ridersSeedPath);
     const riders = mockRiders.map((rider) => ({
@@ -199,6 +219,7 @@ class LocalDataStore {
     }));
 
     return {
+      cities,
       riders,
       zones,
       mock_platform_riders: mockRiders.map((rider) => ({
@@ -294,6 +315,12 @@ class LocalDataStore {
           rider_id: "44444444-4444-4444-8444-555555555555",
           balance: 220,
           updated_at: "2026-03-31T18:05:00Z"
+        },
+        {
+          id: "wallet-aditya",
+          rider_id: "55555555-5555-4555-8555-666666666666",
+          balance: 210,
+          updated_at: "2026-03-31T18:10:00Z"
         }
       ],
       wallet_transactions: [
@@ -339,6 +366,23 @@ class LocalDataStore {
   async getZoneById(zoneId) {
     const store = this.readStore();
     return store.zones.find((zone) => zone.id === zoneId) || null;
+  }
+
+  async listCities() {
+    const store = this.readStore();
+    return (store.cities || [])
+      .map((city) => normalizeCityRecord(city))
+      .sort((left, right) => left.name.localeCompare(right.name));
+  }
+
+  async listZones() {
+    const store = this.readStore();
+    return [...store.zones].sort((left, right) => left.name.localeCompare(right.name));
+  }
+
+  async getCityById(cityId) {
+    const store = this.readStore();
+    return normalizeCityRecord(store.cities?.find((city) => city.id === cityId) || null);
   }
 
   async countRecentTriggers(zoneId, sinceIso) {
@@ -742,6 +786,30 @@ class SupabaseDataStore {
       throw error;
     }
     return data;
+  }
+
+  async listCities() {
+    const { data, error } = await this.client.from("cities").select("*").order("name", { ascending: true });
+    if (error) {
+      throw error;
+    }
+    return (data || []).map((city) => normalizeCityRecord(city));
+  }
+
+  async listZones() {
+    const { data, error } = await this.client.from("zones").select("*").order("name", { ascending: true });
+    if (error) {
+      throw error;
+    }
+    return data || [];
+  }
+
+  async getCityById(cityId) {
+    const { data, error } = await this.client.from("cities").select("*").eq("id", cityId).maybeSingle();
+    if (error) {
+      throw error;
+    }
+    return normalizeCityRecord(data);
   }
 
   async countRecentTriggers(zoneId, sinceIso) {
