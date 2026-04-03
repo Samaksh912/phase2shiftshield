@@ -27,6 +27,24 @@ WEATHER_DYNAMIC_WEIGHT = 0.18
 _CACHED_MODEL = None
 
 
+def resolve_seed_path(filename: str) -> Path:
+    current = Path(__file__).resolve()
+
+    for parent in current.parents:
+        nested_backend_seed = parent / "backend" / "seed" / filename
+        if nested_backend_seed.exists():
+            return nested_backend_seed
+
+        direct_backend_seed = parent / "seed" / filename
+        if direct_backend_seed.exists():
+            return direct_backend_seed
+
+    raise FileNotFoundError(
+        f"Could not locate backend seed file '{filename}' from {current}. "
+        "Expected either backend/seed/<file> or seed/<file> in an ancestor directory."
+    )
+
+
 @dataclass(frozen=True)
 class CityConfig:
     id: str
@@ -50,8 +68,8 @@ class ZoneConfig:
     avg_lunch_earnings: int
     avg_dinner_earnings: int
 
-CITY_SEED_PATH = Path(__file__).resolve().parents[2] / "backend" / "seed" / "cities.json"
-ZONES_SEED_PATH = Path(__file__).resolve().parents[2] / "backend" / "seed" / "zones.json"
+CITY_SEED_PATH = resolve_seed_path("cities.json")
+ZONES_SEED_PATH = resolve_seed_path("zones.json")
 
 
 def load_cities() -> Dict[str, CityConfig]:

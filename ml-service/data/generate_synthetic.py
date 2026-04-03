@@ -21,6 +21,24 @@ OPEN_METEO_AQI_URL = os.getenv(
 USE_SYNTHETIC_WEATHER_ONLY = os.getenv("USE_SYNTHETIC_WEATHER_ONLY", "false").lower() == "true"
 
 
+def resolve_seed_path(filename: str) -> Path:
+    current = Path(__file__).resolve()
+
+    for parent in current.parents:
+        nested_backend_seed = parent / "backend" / "seed" / filename
+        if nested_backend_seed.exists():
+            return nested_backend_seed
+
+        direct_backend_seed = parent / "seed" / filename
+        if direct_backend_seed.exists():
+            return direct_backend_seed
+
+    raise FileNotFoundError(
+        f"Could not locate backend seed file '{filename}' from {current}. "
+        "Expected either backend/seed/<file> or seed/<file> in an ancestor directory."
+    )
+
+
 @dataclass(frozen=True)
 class City:
     id: str
@@ -45,8 +63,8 @@ class Zone:
     city_tier: str
 
 
-CITY_SEED_PATH = ROOT.parents[0] / "backend" / "seed" / "cities.json"
-ZONES_SEED_PATH = ROOT.parents[0] / "backend" / "seed" / "zones.json"
+CITY_SEED_PATH = resolve_seed_path("cities.json")
+ZONES_SEED_PATH = resolve_seed_path("zones.json")
 
 
 def load_cities() -> dict[str, City]:
