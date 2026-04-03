@@ -363,6 +363,11 @@ class LocalDataStore {
     return store.riders.find((rider) => rider.id === riderId) || null;
   }
 
+  async getRiderByPhone(phone) {
+    const store = this.readStore();
+    return store.riders.find((rider) => rider.phone === phone) || null;
+  }
+
   async getZoneById(zoneId) {
     const store = this.readStore();
     return store.zones.find((zone) => zone.id === zoneId) || null;
@@ -383,6 +388,41 @@ class LocalDataStore {
   async getCityById(cityId) {
     const store = this.readStore();
     return normalizeCityRecord(store.cities?.find((city) => city.id === cityId) || null);
+  }
+
+  async createRider(rider) {
+    const store = this.readStore();
+    const createdRider = {
+      id: rider.id || randomId(),
+      ...rider,
+      created_at: rider.created_at || new Date().toISOString()
+    };
+    store.riders.push(createdRider);
+    this.writeStore(store);
+    return createdRider;
+  }
+
+  async createMockPlatformRider(platformRider) {
+    const store = this.readStore();
+    const createdPlatformRider = {
+      id: platformRider.id || randomId(),
+      ...platformRider
+    };
+    store.mock_platform_riders.push(createdPlatformRider);
+    this.writeStore(store);
+    return createdPlatformRider;
+  }
+
+  async createWallet(wallet) {
+    const store = this.readStore();
+    const createdWallet = {
+      id: wallet.id || randomId(),
+      ...wallet,
+      updated_at: wallet.updated_at || new Date().toISOString()
+    };
+    store.wallets.push(createdWallet);
+    this.writeStore(store);
+    return createdWallet;
   }
 
   async countRecentTriggers(zoneId, sinceIso) {
@@ -780,6 +820,14 @@ class SupabaseDataStore {
     return data;
   }
 
+  async getRiderByPhone(phone) {
+    const { data, error } = await this.client.from("riders").select("*").eq("phone", phone).maybeSingle();
+    if (error) {
+      throw error;
+    }
+    return data;
+  }
+
   async getZoneById(zoneId) {
     const { data, error } = await this.client.from("zones").select("*").eq("id", zoneId).maybeSingle();
     if (error) {
@@ -810,6 +858,34 @@ class SupabaseDataStore {
       throw error;
     }
     return normalizeCityRecord(data);
+  }
+
+  async createRider(rider) {
+    const { data, error } = await this.client.from("riders").insert(rider).select("*").single();
+    if (error) {
+      throw error;
+    }
+    return data;
+  }
+
+  async createMockPlatformRider(platformRider) {
+    const { data, error } = await this.client
+      .from("mock_platform_riders")
+      .insert(platformRider)
+      .select("*")
+      .single();
+    if (error) {
+      throw error;
+    }
+    return data;
+  }
+
+  async createWallet(wallet) {
+    const { data, error } = await this.client.from("wallets").insert(wallet).select("*").single();
+    if (error) {
+      throw error;
+    }
+    return data;
   }
 
   async countRecentTriggers(zoneId, sinceIso) {

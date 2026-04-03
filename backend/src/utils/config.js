@@ -9,6 +9,9 @@ function getConfig() {
     port: Number(process.env.PORT || 3000),
     nodeEnv: process.env.NODE_ENV || "development",
     jwtSecret: process.env.JWT_SECRET || "shiftshield-dev-secret",
+    twilioAccountSid: process.env.TWILIO_ACCOUNT_SID || "",
+    twilioAuthToken: process.env.TWILIO_AUTH_TOKEN || "",
+    twilioVerifyServiceSid: process.env.TWILIO_VERIFY_SERVICE_SID || "",
     mlServiceUrl: process.env.ML_SERVICE_URL || "http://127.0.0.1:8000",
     openMeteoWeatherUrl:
       process.env.OPEN_METEO_WEATHER_URL || "https://api.open-meteo.com/v1/forecast",

@@ -8,6 +8,7 @@ const { buildDashboardRouter } = require("./routes/dashboard");
 const { buildNotificationsRouter } = require("./routes/notifications");
 const { buildAdminRouter } = require("./routes/admin");
 const { buildCitiesRouter } = require("./routes/cities");
+const { buildAuthRouter } = require("./routes/auth");
 const { QuoteService } = require("./services/quote-service");
 const { MLClient } = require("./services/ml-client");
 const { WeatherService } = require("./services/weather-service");
@@ -19,6 +20,8 @@ const { PolicyService } = require("./services/policy-service");
 const { DashboardService } = require("./services/dashboard-service");
 const { NotificationService } = require("./services/notification-service");
 const { CitiesService } = require("./services/cities-service");
+const { AuthService } = require("./services/auth-service");
+const { TwilioVerificationService } = require("./services/verification-service");
 const { createDataStore } = require("./utils/storage");
 
 function buildApp(overrides = {}) {
@@ -43,6 +46,10 @@ function buildApp(overrides = {}) {
     overrides.dashboardService || new DashboardService({ dataStore, weatherService });
   const citiesService =
     overrides.citiesService || new CitiesService({ dataStore });
+  const verificationService =
+    overrides.verificationService || new TwilioVerificationService();
+  const authService =
+    overrides.authService || new AuthService({ dataStore, verificationService });
 
   app.use(express.json());
 
@@ -53,6 +60,7 @@ function buildApp(overrides = {}) {
     });
   });
 
+  app.use("/api/auth", buildAuthRouter({ authService }));
   app.use("/api/cities", buildCitiesRouter({ citiesService }));
   app.use("/api/quotes", authMiddleware(), buildQuotesRouter({ quoteService }));
   app.use("/api/policies", authMiddleware(), buildPoliciesRouter({ policyService }));
