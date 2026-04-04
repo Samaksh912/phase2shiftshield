@@ -58,14 +58,34 @@ From [`/home/arnavbansal/Guidewire/ml-service`](/home/arnavbansal/Guidewire/ml-s
 ```bash
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-PYTHONPATH=. .venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000
+PYTHONPATH=. .venv/bin/uvicorn main:app --host 127.0.0.1 --port 8001
 ```
 
 From [`/home/arnavbansal/Guidewire/backend`](/home/arnavbansal/Guidewire/backend):
 
 ```bash
 npm install
-HOST=127.0.0.1 PORT=3000 JWT_SECRET=shiftshield-dev-secret ML_SERVICE_URL=http://127.0.0.1:8000 node src/index.js
+HOST=127.0.0.1 PORT=3000 JWT_SECRET=shiftshield-dev-secret ML_SERVICE_URL=http://127.0.0.1:8001 node src/index.js
+```
+
+Windows / PowerShell equivalents:
+
+```powershell
+# ML service
+cd .\ml-service
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+uvicorn main:app --host 127.0.0.1 --port 8001
+
+# Backend
+cd .\backend
+npm install
+$env:HOST="127.0.0.1"
+$env:PORT="3000"
+$env:JWT_SECRET="shiftshield-dev-secret"
+$env:ML_SERVICE_URL="http://127.0.0.1:8001"
+node .\src\index.js
 ```
 
 ## Sample JWT payload expected by the quote route
