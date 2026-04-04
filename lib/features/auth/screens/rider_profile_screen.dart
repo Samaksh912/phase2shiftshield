@@ -122,6 +122,15 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
     });
   }
 
+  void _handleBack() {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+
+    context.go(AppRoutes.signup);
+  }
+
   Future<void> _completeSetup() async {
     if (!_isCompliant) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -676,7 +685,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                       Row(
                         children: [
                           GestureDetector(
-                            onTap: () => context.pop(),
+                            onTap: _handleBack,
                             child: Icon(
                               Icons.arrow_back,
                               color: context.colors.primary,

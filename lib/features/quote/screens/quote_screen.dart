@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../theme/app_colors.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/services/api_service.dart';
 import 'payments_screen.dart';
 
@@ -99,6 +101,15 @@ class _QuoteScreenState extends State<QuoteScreen>
     _pulseController.dispose();
     _countdownTimer?.cancel();
     super.dispose();
+  }
+
+  void _handleBack() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    context.go(AppRoutes.dashboard);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -592,7 +603,7 @@ class _QuoteScreenState extends State<QuoteScreen>
                       Row(
                         children: [
                           GestureDetector(
-                            onTap: () => Navigator.pop(context),
+                            onTap: _handleBack,
                             child: Icon(
                               Icons.arrow_back,
                               color: context.colors.primary,

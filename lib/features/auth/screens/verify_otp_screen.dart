@@ -53,6 +53,15 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     }
   }
 
+  void _handleBack() {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+
+    context.go(widget.isLogin ? AppRoutes.login : AppRoutes.signup);
+  }
+
   Future<void> _verifyOtp() async {
     final otp = _controllers.map((c) => c.text).join();
     if (otp.length < 4) return;
@@ -133,7 +142,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                       child: Row(
                         children: [
                           GestureDetector(
-                            onTap: () => context.pop(),
+                            onTap: _handleBack,
                             child: Icon(
                               Icons.arrow_back,
                               color: context.colors.primary,

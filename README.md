@@ -381,7 +381,9 @@ Flow:
 Important demo note:
 
 - signup demo numbers are hardcoded for testing and demo stability
+- there are currently `5` demo signup numbers and `5` seeded demo login numbers
 - each signup number can only be used once unless the local store is reset
+- the first `3` signup numbers already have some local demo data in the current app flow, so use them first if you want the smoothest walkthrough
 - use seeded rider credentials below for repeatable login demos
 
 ### Session lookup
@@ -448,15 +450,15 @@ Use these seeded phone and OTP pairs for repeatable demo login.
 
 ### Demo signup numbers
 
-| Phone | Demo OTP |
-|------|----------|
-| `9012345678` | `1201` |
-| `9012345679` | `1202` |
-| `9012345680` | `1203` |
-| `9012345681` | `1204` |
-| `9012345682` | `1205` |
+| Phone | Demo OTP | Notes |
+|------|----------|-------|
+| `9012345678` | `1201` | Preferred signup test number; already has local demo flow coverage |
+| `9012345679` | `1202` | Preferred signup test number; already has local demo flow coverage |
+| `9012345680` | `1203` | Preferred signup test number; already has local demo flow coverage |
+| `9012345681` | `1204` | Fresh signup test number |
+| `9012345682` | `1205` | Fresh signup test number |
 
-Use these only for signup testing. Each one can create a new rider once unless you reset the local store.
+Use these only for signup testing. Each one can create a new rider once unless you reset the local store. For the cleanest demo, start with the top three numbers listed above.
 
 ## What Is Not Built Yet
 

@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import '../../../core/router/app_router.dart';
 import '../../../theme/app_colors.dart';
 import '../../../core/services/api_service.dart';
 
@@ -203,9 +205,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     setState(() => _state = _FlowState.success);
 
     if (!mounted) return;
-    // Pop back to root and land on Dashboard
-    // Adjust to your navigation setup (go_router, named routes, etc.)
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    context.go(AppRoutes.dashboard);
   }
 
   // ───────────────────────────────────────────
@@ -609,7 +609,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: _canNavigateBack ? () => Navigator.pop(context) : null,
+                  onTap: _canNavigateBack ? _handleBack : null,
                   child: Icon(
                     Icons.arrow_back,
                     color: _canNavigateBack
@@ -743,6 +743,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
       _state == _FlowState.idle ||
       _state == _FlowState.paymentFailed ||
       _state == _FlowState.policyFailed;
+
+  void _handleBack() {
+    if (!_canNavigateBack) {
+      return;
+    }
+
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    context.go(AppRoutes.dashboard);
+  }
 
   Widget _summaryRow({
     required IconData icon,
