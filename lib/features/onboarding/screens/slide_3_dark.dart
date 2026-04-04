@@ -50,13 +50,15 @@ class Slide3Dark extends StatelessWidget {
                                 width: 280,
                                 height: 280,
                                 decoration: BoxDecoration(
-                                  color: context.colors.primary.withOpacity(
+                                  color: context.colors.primary.withValues(
+                                    alpha:
                                     0.15,
                                   ),
                                   shape: BoxShape.circle,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: context.colors.primary.withOpacity(
+                                      color: context.colors.primary.withValues(
+                                        alpha:
                                         0.1,
                                       ),
                                       blurRadius: 100,
@@ -75,7 +77,7 @@ class Slide3Dark extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(24),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.4),
+                                      color: Colors.black.withValues(alpha: 0.4),
                                       blurRadius: 40,
                                       offset: const Offset(0, 20),
                                     ),
@@ -97,7 +99,7 @@ class Slide3Dark extends StatelessWidget {
                                           height: 40,
                                           decoration: BoxDecoration(
                                             color: context.colors.primary
-                                                .withOpacity(0.2),
+                                                .withValues(alpha: 0.2),
                                             shape: BoxShape.circle,
                                           ),
                                           child: Icon(
@@ -302,7 +304,7 @@ class Slide3Dark extends StatelessWidget {
                                                   color: context
                                                       .colors
                                                       .onPrimaryFixed
-                                                      .withOpacity(0.2),
+                                                      .withValues(alpha: 0.2),
                                                   shape: BoxShape.circle,
                                                 ),
                                                 child: Icon(
@@ -357,7 +359,7 @@ class Slide3Dark extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(20),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.3),
+                                          color: Colors.black.withValues(alpha: 0.3),
                                           blurRadius: 20,
                                           offset: const Offset(4, 10),
                                         ),
@@ -384,11 +386,11 @@ class Slide3Dark extends StatelessWidget {
                                           context.colors.surfaceContainerHigh,
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
-                                        color: Colors.white.withOpacity(0.05),
+                                        color: Colors.white.withValues(alpha: 0.05),
                                       ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.3),
+                                          color: Colors.black.withValues(alpha: 0.3),
                                           blurRadius: 20,
                                           offset: const Offset(-4, 10),
                                         ),

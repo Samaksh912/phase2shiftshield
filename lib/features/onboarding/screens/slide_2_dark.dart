@@ -29,11 +29,11 @@ class Slide2Dark extends StatelessWidget {
                         color: context.colors.surfaceContainerLow,
                         borderRadius: BorderRadius.circular(48),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.5),
+                            color: Colors.black.withValues(alpha: 0.5),
                             blurRadius: 50,
                             offset: const Offset(0, 20),
                           ),
@@ -66,19 +66,21 @@ class Slide2Dark extends StatelessWidget {
                                 Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: context.colors.primary.withOpacity(
+                                    color: context.colors.primary.withValues(
+                                      alpha:
                                       0.1,
                                     ),
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
-                                      color: context.colors.primary.withOpacity(
+                                      color: context.colors.primary.withValues(
+                                        alpha:
                                         0.2,
                                       ),
                                     ),
                                     boxShadow: [
                                       BoxShadow(
                                         color: context.colors.primary
-                                            .withOpacity(0.15),
+                                            .withValues(alpha: 0.15),
                                         blurRadius: 20,
                                       ),
                                     ],
@@ -123,7 +125,7 @@ class Slide2Dark extends StatelessWidget {
                                         context.colors.surfaceContainerHighest,
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
-                                      color: Colors.white.withOpacity(0.05),
+                                      color: Colors.white.withValues(alpha: 0.05),
                                     ),
                                   ),
                                   child: Column(
@@ -204,7 +206,7 @@ class Slide2Dark extends StatelessWidget {
                                         height: 6,
                                         width: double.infinity,
                                         decoration: BoxDecoration(
-                                          color: Colors.black.withOpacity(0.4),
+                                          color: Colors.black.withValues(alpha: 0.4),
                                           borderRadius: BorderRadius.circular(
                                             3,
                                           ),
@@ -236,7 +238,7 @@ class Slide2Dark extends StatelessWidget {
                                                     BorderRadius.circular(12),
                                                 border: Border.all(
                                                   color: Colors.white
-                                                      .withOpacity(0.05),
+                                                      .withValues(alpha: 0.05),
                                                 ),
                                               ),
                                               child: Column(
@@ -279,7 +281,7 @@ class Slide2Dark extends StatelessWidget {
                                                     BorderRadius.circular(12),
                                                 border: Border.all(
                                                   color: Colors.white
-                                                      .withOpacity(0.05),
+                                                      .withValues(alpha: 0.05),
                                                 ),
                                               ),
                                               child: Column(
@@ -329,12 +331,12 @@ class Slide2Dark extends StatelessWidget {
                                         height: 80,
                                         decoration: BoxDecoration(
                                           color: context.colors.primary
-                                              .withOpacity(0.2),
+                                              .withValues(alpha: 0.2),
                                           shape: BoxShape.circle,
                                           boxShadow: [
                                             BoxShadow(
                                               color: context.colors.primary
-                                                  .withOpacity(0.4),
+                                                  .withValues(alpha: 0.4),
                                               blurRadius: 30,
                                             ),
                                           ],
@@ -369,7 +371,7 @@ class Slide2Dark extends StatelessWidget {
                   height: 1.1,
                   shadows: [
                     Shadow(
-                      color: context.colors.primary.withOpacity(0.4),
+                      color: context.colors.primary.withValues(alpha: 0.4),
                       blurRadius: 15,
                     ),
                   ],

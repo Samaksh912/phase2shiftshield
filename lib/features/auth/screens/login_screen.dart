@@ -158,8 +158,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     boxShadow: [
                       BoxShadow(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.black.withOpacity(0.5)
-                            : Colors.black.withOpacity(0.1),
+                            ? Colors.black.withValues(alpha: 0.5)
+                            : Colors.black.withValues(alpha: 0.1),
                         blurRadius: 40,
                         offset: const Offset(0, 20),
                       ),
@@ -193,7 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 gradient: LinearGradient(
                                   colors: [
                                     Colors.transparent,
-                                    context.colors.primary.withOpacity(0.3),
+                                    context.colors.primary.withValues(alpha: 0.3),
                                     Colors.transparent,
                                   ],
                                 ),
@@ -226,7 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color: context.colors.onSurface
-                                          .withOpacity(0.1),
+                                          .withValues(alpha: 0.1),
                                     ),
                                   ),
                                   child: Text(
@@ -268,7 +268,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         hintText: '98765 43210',
                                         hintStyle: GoogleFonts.spaceGrotesk(
                                           color: context.colors.onSurface
-                                              .withOpacity(0.4),
+                                              .withValues(alpha: 0.4),
                                         ),
                                       ),
                                     ),
@@ -291,7 +291,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   elevation: 8,
                                   shadowColor: context.colors.primary
-                                      .withOpacity(0.2),
+                                      .withValues(alpha: 0.2),
                                 ),
                                 child: Ink(
                                   decoration: BoxDecoration(
@@ -386,7 +386,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       Expanded(
                                         child: Divider(
                                           color: context.colors.outline
-                                              .withOpacity(0.1),
+                                              .withValues(alpha: 0.1),
                                         ),
                                       ),
                                       Padding(
@@ -400,14 +400,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                             fontWeight: FontWeight.w900,
                                             letterSpacing: 3.0,
                                             color: context.colors.onSurface
-                                                .withOpacity(0.3),
+                                                .withValues(alpha: 0.3),
                                           ),
                                         ),
                                       ),
                                       Expanded(
                                         child: Divider(
                                           color: context.colors.onSurface
-                                              .withOpacity(0.1),
+                                              .withValues(alpha: 0.1),
                                         ),
                                       ),
                                     ],
@@ -429,7 +429,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     Icon(
                       Icons.verified_user,
-                      color: context.colors.primary.withOpacity(0.3),
+                      color: context.colors.primary.withValues(alpha: 0.3),
                       size: 20,
                     ),
                     SizedBox(width: 8),
@@ -439,7 +439,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         fontSize: 12,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 2.0,
-                        color: context.colors.onSurface.withOpacity(0.3),
+                        color: context.colors.onSurface.withValues(alpha: 0.3),
                       ),
                     ),
                   ],

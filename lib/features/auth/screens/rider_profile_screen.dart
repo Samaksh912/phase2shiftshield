@@ -36,7 +36,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
   bool _dinnerSelected = true;
   PayoutMode _payoutMode = PayoutMode.wallet;
   bool _isCompliant = false;
-  bool _isLoading = false;
+  final bool _isLoading = false;
   bool _isSubmitting = false;
 
   // Cities & zones from API
@@ -257,7 +257,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                           border: InputBorder.none,
                           hintText: 'Your Legal Full Name',
                           hintStyle: GoogleFonts.spaceGrotesk(
-                            color: context.colors.onSurfaceVariant.withOpacity(0.4),
+                            color: context.colors.onSurfaceVariant.withValues(alpha: 0.4),
                           ),
                         ),
                       ),
@@ -475,8 +475,8 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                         children: [
                           Container(
                             decoration: BoxDecoration(
-                              color: context.colors.surfaceContainerHighest.withOpacity(0.5),
-                              border: Border.all(color: context.colors.primary.withOpacity(0.2)),
+                              color: context.colors.surfaceContainerHighest.withValues(alpha: 0.5),
+                              border: Border.all(color: context.colors.primary.withValues(alpha: 0.2)),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             padding: EdgeInsets.all(20),
@@ -562,7 +562,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                                             border: InputBorder.none,
                                             hintText: 'rider@okaxis',
                                             hintStyle: GoogleFonts.spaceGrotesk(
-                                              color: context.colors.onSurfaceVariant.withOpacity(0.5),
+                                              color: context.colors.onSurfaceVariant.withValues(alpha: 0.5),
                                             ),
                                           ),
                                         ),
@@ -678,7 +678,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                 child: Container(
                   height: 64 + MediaQuery.of(context).padding.top,
                   padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top, left: 24, right: 24),
-                  color: context.colors.surface.withOpacity(0.7),
+                  color: context.colors.surface.withValues(alpha: 0.7),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -736,7 +736,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                 boxShadow: [
                   BoxShadow(
-                    color: context.colors.primary.withOpacity(0.12),
+                    color: context.colors.primary.withValues(alpha: 0.12),
                     blurRadius: 32,
                     offset: Offset(0, -16),
                   ),
@@ -764,7 +764,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                               end: Alignment.bottomRight,
                             )
                           : null,
-                      color: _isCompliant ? null : context.colors.surfaceContainerHighest.withOpacity(0.5),
+                      color: _isCompliant ? null : context.colors.surfaceContainerHighest.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Container(
@@ -780,7 +780,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                               children: [
                                 Icon(
                                   Icons.check_circle,
-                                  color: _isCompliant ? context.colors.onPrimaryFixed : context.colors.onSurfaceVariant.withOpacity(0.5),
+                                  color: _isCompliant ? context.colors.onPrimaryFixed : context.colors.onSurfaceVariant.withValues(alpha: 0.5),
                                   size: 20,
                                 ),
                                 SizedBox(width: 8),
@@ -790,7 +790,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1.5,
-                                    color: _isCompliant ? context.colors.onPrimaryFixed : context.colors.onSurfaceVariant.withOpacity(0.5),
+                                    color: _isCompliant ? context.colors.onPrimaryFixed : context.colors.onSurfaceVariant.withValues(alpha: 0.5),
                                   ),
                                 ),
                               ],
@@ -850,7 +850,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
               child: Icon(
                 icon,
                 size: 96,
-                color: context.colors.onSurface.withOpacity(0.05),
+                color: context.colors.onSurface.withValues(alpha: 0.05),
               ),
             ),
             Column(
@@ -875,7 +875,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                   style: GoogleFonts.manrope(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: isSelected ? context.colors.onSurfaceVariant : context.colors.onSurfaceVariant.withOpacity(0.5),
+                    color: isSelected ? context.colors.onSurfaceVariant : context.colors.onSurfaceVariant.withValues(alpha: 0.5),
                   ),
                 ),
               ],
@@ -898,7 +898,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: context.colors.primary.withOpacity(0.2),
+                    color: context.colors.primary.withValues(alpha: 0.2),
                     blurRadius: 16,
                     offset: Offset(0, 8),
                   )

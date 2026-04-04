@@ -17,10 +17,10 @@ class GlassHeader extends StatelessWidget {
           height: 64,
           padding: EdgeInsets.symmetric(horizontal: 24),
           decoration: BoxDecoration(
-            color: context.colors.surface.withOpacity(0.7),
+            color: context.colors.surface.withValues(alpha: 0.7),
             border: Border(
               bottom: BorderSide(
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
                 width: 1,
               ),
             ),

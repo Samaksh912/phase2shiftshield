@@ -60,9 +60,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
   // Captured from Razorpay success callback
   String? _razorpayPaymentId;
 
-  // Retained for policy-creation retry after payment success
-  bool _paymentAlreadySucceeded = false;
-
   @override
   void initState() {
     super.initState();
@@ -84,7 +81,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   void _onPaymentSuccess(PaymentSuccessResponse response) {
     _razorpayPaymentId = response.paymentId;
-    _paymentAlreadySucceeded = true;
     _createPolicy();
   }
 
@@ -118,7 +114,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     final options = {
       'key':
-          'rzp_test_XXXXXXXXXXXXXXXX', // 🔑 Replace with your Razorpay test key
+          'rzp_test_SZWH7PbKYjmFpA', // 🔑 Replace with your Razorpay test key
       'amount': widget.args.premium * 100, // Razorpay expects paise
       'currency': 'INR',
       'name': 'RiderShield Insurance',
@@ -320,12 +316,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
         color: context.colors.surfaceContainer,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: context.colors.primary.withOpacity(0.25),
+          color: context.colors.primary.withValues(alpha: 0.25),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: context.colors.primary.withOpacity(0.07),
+            color: context.colors.primary.withValues(alpha: 0.07),
             blurRadius: 28,
             spreadRadius: -4,
           ),
@@ -363,7 +359,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           const SizedBox(height: 20),
 
           // Divider
-          Divider(color: context.colors.outlineVariant.withOpacity(0.3)),
+          Divider(color: context.colors.outlineVariant.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
 
           // Premium row
@@ -413,7 +409,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             color: context.colors.surfaceContainer,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: context.colors.primary.withOpacity(0.4),
+              color: context.colors.primary.withValues(alpha: 0.4),
               width: 1.5,
             ),
           ),
@@ -423,7 +419,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF072654).withOpacity(0.08),
+                  color: const Color(0xFF072654).withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
@@ -562,7 +558,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
           child: Container(
-            color: context.colors.surface.withOpacity(0.85),
+            color: context.colors.surface.withValues(alpha: 0.85),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -605,7 +601,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
               left: 24,
               right: 24,
             ),
-            color: context.colors.surface.withOpacity(0.7),
+            color: context.colors.surface.withValues(alpha: 0.7),
             child: Row(
               children: [
                 GestureDetector(
@@ -614,7 +610,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     Icons.arrow_back,
                     color: _canNavigateBack
                         ? context.colors.primary
-                        : context.colors.onSurfaceVariant.withOpacity(0.4),
+                        : context.colors.onSurfaceVariant.withValues(alpha: 0.4),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -666,7 +662,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             end: Alignment.topCenter,
             colors: [
               context.colors.surface,
-              context.colors.surface.withOpacity(0.0),
+              context.colors.surface.withValues(alpha: 0.0),
             ],
           ),
         ),

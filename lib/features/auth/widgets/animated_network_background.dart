@@ -57,8 +57,8 @@ class _AnimatedNetworkBackgroundState extends State<AnimatedNetworkBackground> w
             painter: _AnimatedNetworkPainter(
               animation: _controller, // Pass the controller to trigger repaints
               nodes: _nodes,
-              lineColor: colors.primary.withOpacity(0.25), // Lightened opacity back slightly
-              nodeColor: colors.primary.withOpacity(0.5),  // Lightened opacity back slightly
+              lineColor: colors.primary.withValues(alpha: 0.25), // Lightened opacity back slightly
+              nodeColor: colors.primary.withValues(alpha: 0.5),  // Lightened opacity back slightly
               width: constraints.maxWidth,
               height: constraints.maxHeight,
             ),
@@ -127,7 +127,7 @@ class _AnimatedNetworkPainter extends CustomPainter {
         if (distance < 120) {
           // Optional: You can make lines fade out as they get further away
           final opacity = (1.0 - (distance / 120)).clamp(0.0, 1.0);
-          paintLine.color = lineColor.withOpacity(lineColor.opacity * opacity);
+          paintLine.color = lineColor.withValues(alpha: lineColor.a * opacity);
           
           canvas.drawLine(
             Offset(nodes[i].x, nodes[i].y),

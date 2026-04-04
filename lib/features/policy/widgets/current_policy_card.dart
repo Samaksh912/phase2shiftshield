@@ -10,7 +10,6 @@ class CurrentPolicyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = policy['status'] as String? ?? 'active';
     final weekStart = Formatters.formatDate(policy['week_start'] as String?);
     final weekEnd = Formatters.formatDate(policy['week_end'] as String?);
 

@@ -52,9 +52,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ApiService.getCurrentPolicy().catchError((_) => <String, dynamic>{}),
       ]);
 
-      final riderRes = responses[0] as Map<String, dynamic>;
-      final citiesRes = responses[1] as Map<String, dynamic>;
-      final policyRes = responses[2] as Map<String, dynamic>;
+      final riderRes = responses[0];
+      final citiesRes = responses[1];
+      final policyRes = responses[2];
 
       // Flatten zones from all cities
       final cities = (citiesRes['cities'] as List<dynamic>?) ?? [];

@@ -134,7 +134,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                   height: 64,
                   padding: EdgeInsets.symmetric(horizontal: 24),
                   decoration: BoxDecoration(
-                    color: context.colors.surface.withOpacity(0.7),
+                    color: context.colors.surface.withValues(alpha: 0.7),
                   ),
                   child: ClipRRect(
                     child: BackdropFilter(
@@ -224,13 +224,14 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                                   height: 128,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    color: context.colors.primary.withOpacity(
+                                    color: context.colors.primary.withValues(
+                                      alpha:
                                       0.1,
                                     ),
                                     boxShadow: [
                                       BoxShadow(
                                         color: context.colors.primary
-                                            .withOpacity(0.1),
+                                            .withValues(alpha: 0.1),
                                         blurRadius: 64,
                                         spreadRadius: 32,
                                       ),
@@ -267,7 +268,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                                                       .colors
                                                       .primaryContainer
                                                 : context.colors.outlineVariant
-                                                      .withOpacity(0.3),
+                                                      .withValues(alpha: 0.3),
                                             width: 2,
                                           ),
                                           boxShadow:
@@ -280,7 +281,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                                                     color: context
                                                         .colors
                                                         .primary
-                                                        .withOpacity(0.1),
+                                                        .withValues(alpha: 0.1),
                                                     blurRadius: 20,
                                                     spreadRadius: 0,
                                                   ),
@@ -344,7 +345,7 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                                           disabledForegroundColor: context
                                               .colors
                                               .outline
-                                              .withOpacity(0.5),
+                                              .withValues(alpha: 0.5),
                                         ),
                                         child: Text(
                                           'RESEND CODE',
@@ -381,7 +382,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                                   child: Icon(
                                     Icons.verified_user,
                                     size: 64,
-                                    color: context.colors.onSurface.withOpacity(
+                                    color: context.colors.onSurface.withValues(
+                                      alpha:
                                       0.05,
                                     ),
                                   ),
@@ -436,7 +438,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 elevation: 8,
-                                shadowColor: context.colors.primary.withOpacity(
+                                shadowColor: context.colors.primary.withValues(
+                                  alpha:
                                   0.25,
                                 ),
                               ),
@@ -513,7 +516,8 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
                           color: context.colors.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(32),
                           border: Border.all(
-                            color: context.colors.outlineVariant.withOpacity(
+                            color: context.colors.outlineVariant.withValues(
+                              alpha:
                               0.1,
                             ),
                           ),

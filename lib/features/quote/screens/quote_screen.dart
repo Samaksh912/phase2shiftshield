@@ -251,7 +251,7 @@ class _QuoteScreenState extends State<QuoteScreen>
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: riskColor.withOpacity(0.12),
+                            color: riskColor.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(32),
                           ),
                           child: Row(
@@ -312,12 +312,12 @@ class _QuoteScreenState extends State<QuoteScreen>
                       color: context.colors.surfaceContainer,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
-                        color: context.colors.primary.withOpacity(0.3),
+                        color: context.colors.primary.withValues(alpha: 0.3),
                         width: 1.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: context.colors.primary.withOpacity(0.08),
+                          color: context.colors.primary.withValues(alpha: 0.08),
                           blurRadius: 32,
                           spreadRadius: -4,
                         ),
@@ -373,7 +373,7 @@ class _QuoteScreenState extends State<QuoteScreen>
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: riskColor.withOpacity(0.12),
+                                color: riskColor.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(32),
                               ),
                               child: Text(
@@ -407,7 +407,7 @@ class _QuoteScreenState extends State<QuoteScreen>
                                 width: 1,
                                 height: 40,
                                 color: context.colors.outlineVariant
-                                    .withOpacity(0.3),
+                                    .withValues(alpha: 0.3),
                               ),
                               _statCell(
                                 'DINNER MAX',
@@ -418,7 +418,7 @@ class _QuoteScreenState extends State<QuoteScreen>
                                 width: 1,
                                 height: 40,
                                 color: context.colors.outlineVariant
-                                    .withOpacity(0.3),
+                                    .withValues(alpha: 0.3),
                               ),
                               _statCell(
                                 'SHIFTS',
@@ -546,7 +546,7 @@ class _QuoteScreenState extends State<QuoteScreen>
                         color: context.colors.surfaceContainerLow,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: context.colors.outlineVariant.withOpacity(0.3),
+                          color: context.colors.outlineVariant.withValues(alpha: 0.3),
                         ),
                       ),
                       child: Row(
@@ -596,7 +596,7 @@ class _QuoteScreenState extends State<QuoteScreen>
                     left: 24,
                     right: 24,
                   ),
-                  color: context.colors.surface.withOpacity(0.7),
+                  color: context.colors.surface.withValues(alpha: 0.7),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -661,7 +661,7 @@ class _QuoteScreenState extends State<QuoteScreen>
                   end: Alignment.topCenter,
                   colors: [
                     context.colors.surface,
-                    context.colors.surface.withOpacity(0.0),
+                    context.colors.surface.withValues(alpha: 0.0),
                   ],
                 ),
               ),

@@ -114,22 +114,6 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  static Future<Map<String, dynamic>> _put(
-    String path,
-    Map<String, dynamic> body,
-  ) async {
-    final headers = await _authHeaders();
-    final uri = Uri.parse('$_base$path');
-    final encodedBody = jsonEncode(body);
-    _log('PUT $uri headers=${headers.keys.toList()} body=$encodedBody');
-    final response = await http.put(
-      uri,
-      headers: headers,
-      body: encodedBody,
-    );
-    return _handleResponse(response);
-  }
-
   // ─────────────────────────────────────────────
   // AUTH — SIGNUP FLOW
   // ─────────────────────────────────────────────
@@ -257,13 +241,17 @@ class ApiService {
         return LocalAppDataService.createPolicy(phone, quoteId, paymentMethod);
       });
     }
-    return _post('/api/policies/create', {
+    final body = <String, dynamic>{
       'quote_id': quoteId,
       'payment_method': paymentMethod,
-      if (paymentReferenceId != null)
-        'payment_reference_id': paymentReferenceId,
-      if (paymentStatus != null) 'payment_status': paymentStatus,
-    });
+    };
+    if (paymentReferenceId != null) {
+      body['payment_reference_id'] = paymentReferenceId;
+    }
+    if (paymentStatus != null) {
+      body['payment_status'] = paymentStatus;
+    }
+    return _post('/api/policies/create', body);
   }
 
   /// GET /api/policies/current
