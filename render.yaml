@@ -16,10 +16,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: ML_SERVICE_URL
-        fromService:
-          type: web
-          name: shiftshield-ml
-          property: url
+        value: https://shiftshield-ml.onrender.com
       - key: SUPABASE_URL
         value: https://ntwgaooqahukkngtszzd.supabase.co
       - key: SUPABASE_SERVICE_KEY
