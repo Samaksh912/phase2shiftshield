@@ -2,10 +2,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
 import '../../../core/router/app_router.dart';
 import '../../../theme/app_colors.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/services/razorpay_service.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ENTRY POINT ARGUMENTS
@@ -53,7 +53,7 @@ enum _FlowState {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  late final Razorpay _razorpay;
+  late final RazorpayService _razorpay;
   _FlowState _state = _FlowState.idle;
   String? _errorMessage;
 
@@ -63,43 +63,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   void initState() {
     super.initState();
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _onPaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _onPaymentError);
-    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _onExternalWallet);
+    _razorpay = RazorpayService();
   }
 
   @override
   void dispose() {
-    _razorpay.clear();
+    _razorpay.dispose();
     super.dispose();
-  }
-
-  // ───────────────────────────────────────────
-  // RAZORPAY CALLBACKS
-  // ───────────────────────────────────────────
-
-  void _onPaymentSuccess(PaymentSuccessResponse response) {
-    _razorpayPaymentId = response.paymentId;
-    _createPolicy();
-  }
-
-  void _onPaymentError(PaymentFailureResponse response) {
-    // Code 0 = user cancelled the sheet
-    final wasCancelled =
-        response.code == Razorpay.NETWORK_ERROR ||
-        response.message?.toLowerCase().contains('cancel') == true;
-    setState(() {
-      _state = wasCancelled ? _FlowState.idle : _FlowState.paymentFailed;
-      _errorMessage = wasCancelled
-          ? null
-          : (response.message ?? 'Payment failed. Please try again.');
-    });
-  }
-
-  void _onExternalWallet(ExternalWalletResponse response) {
-    // Not supported in this flow; treat as cancellation
-    setState(() => _state = _FlowState.idle);
   }
 
   // ───────────────────────────────────────────
@@ -112,38 +82,29 @@ class _PaymentScreenState extends State<PaymentScreen> {
       _errorMessage = null;
     });
 
-    final options = {
-      'key':
-          'rzp_test_SZWH7PbKYjmFpA', // 🔑 Replace with your Razorpay test key
-      'amount': widget.args.premium * 100, // Razorpay expects paise
-      'currency': 'INR',
-      'name': 'RiderShield Insurance',
-      'description':
-          'Weekly policy · ${widget.args.weekStart} → ${widget.args.weekEnd}',
-      'prefill': {
-        // Optional: pre-fill if you have rider contact details
-        // 'contact': riderPhone,
-        // 'email': riderEmail,
+    _razorpay.open(
+      key: 'rzp_test_SZWH7PbKYjmFpA',
+      amountInPaise: widget.args.premium * 100,
+      currency: 'INR',
+      name: 'RiderShield Insurance',
+      description: 'Weekly policy · ${widget.args.weekStart} → ${widget.args.weekEnd}',
+      notes: {'quote_id': widget.args.quoteId},
+      themeColor: '#6366F1',
+      onResult: (result) {
+        if (result.success) {
+          _razorpayPaymentId = result.paymentId;
+          _createPolicy();
+        } else if (result.errorMessage == null) {
+          // Cancelled
+          setState(() => _state = _FlowState.idle);
+        } else {
+          setState(() {
+            _state = _FlowState.paymentFailed;
+            _errorMessage = result.errorMessage;
+          });
+        }
       },
-      'notes': {'quote_id': widget.args.quoteId},
-      'theme': {
-        'color': '#6366F1', // Match your app's primary — update if needed
-      },
-      // Test mode: no actual charge
-      'modal': {
-        'confirm_close': true, // Ask before closing
-        'animation': true,
-      },
-    };
-
-    try {
-      _razorpay.open(options);
-    } catch (e) {
-      setState(() {
-        _state = _FlowState.idle;
-        _errorMessage = 'Could not open payment. Please try again.';
-      });
-    }
+    );
   }
 
   // ───────────────────────────────────────────

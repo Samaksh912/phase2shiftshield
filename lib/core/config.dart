@@ -1,8 +1,8 @@
 class AppConfig {
-  static const bool useLocalAppData = true;
+  static const bool useLocalAppData = false;
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.1.47:3000',
+    defaultValue: 'https://shiftshield-backend-5x53.onrender.com',
   );
   static const bool devBypassAuth = false;
 

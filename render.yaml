@@ -17,6 +17,7 @@ services:
         generateValue: true
       - key: ML_SERVICE_URL
         value: https://shiftshield-ml.onrender.com
+      # Backend URL: https://shiftshield-backend-5x53.onrender.com
       - key: SUPABASE_URL
         value: https://ntwgaooqahukkngtszzd.supabase.co
       - key: SUPABASE_SERVICE_KEY
