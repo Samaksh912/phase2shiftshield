@@ -15,11 +15,11 @@ services:
         value: production
       - key: JWT_SECRET
         generateValue: true
-      - key: ML_SERVICE_HOSTPORT
+      - key: ML_SERVICE_URL
         fromService:
-          type: pserv
+          type: web
           name: shiftshield-ml
-          property: hostport
+          property: url
       - key: SUPABASE_URL
         value: https://ntwgaooqahukkngtszzd.supabase.co
       - key: SUPABASE_SERVICE_KEY
@@ -29,16 +29,15 @@ services:
       - key: TWILIO_ACCOUNT_SID
         sync: false
 
-  - type: pserv
+  - type: web
     name: shiftshield-ml
     runtime: python
     rootDir: backend/ml-service
-    plan: starter
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
-      - key: PORT
-        value: 8001
       - key: PYTHON_VERSION
         value: 3.12.4
