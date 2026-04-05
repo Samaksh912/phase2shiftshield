@@ -51,27 +51,27 @@ class ClaimsEngine {
         await this.dataStore.deleteClaimById(existingClaim.id);
         existingClaim = null;
       }
-      const platformRider = await this.dataStore.getMockPlatformRiderByPhone(rider.phone);
-      const fraudResult = runFraudChecks({
-        rider,
-        policy,
-        triggerEvent,
-        shiftType,
-        claimDate,
-        existingClaim,
-        platformRider,
-        now
-      });
-
-      if (fraudResult.hardFail) {
-        results.push({ rider_id: rider.id, outcome: "skipped", reason: "hard_fail", checks: fraudResult.checks });
-        continue;
-      }
-
       const rawBaseline = shiftType === "lunch" ? rider.lunch_baseline : rider.dinner_baseline;
       const baseline = rawBaseline ?? (shiftType === "lunch" ? 420 : 680);
       const payoutAmount = Math.round((baseline * triggerEvent.payout_percent) / 100);
-      const claimStatus = fraudResult.softFail ? "under_review" : "paid";
+
+      // Simulation bypasses fraud checks — always paid so wallet gets credited
+      let claimStatus, fraudFlag;
+      if (triggerEvent.is_simulation) {
+        claimStatus = "paid";
+        fraudFlag = false;
+      } else {
+        const platformRider = await this.dataStore.getMockPlatformRiderByPhone(rider.phone);
+        const fraudResult = runFraudChecks({
+          rider, policy, triggerEvent, shiftType, claimDate, existingClaim, platformRider, now
+        });
+        if (fraudResult.hardFail) {
+          results.push({ rider_id: rider.id, outcome: "skipped", reason: "hard_fail", checks: fraudResult.checks });
+          continue;
+        }
+        claimStatus = fraudResult.softFail ? "under_review" : "paid";
+        fraudFlag = fraudResult.softFail;
+      }
 
       const claim = await this.dataStore.createClaim({
         rider_id: rider.id,
@@ -83,7 +83,7 @@ class ClaimsEngine {
         payout_percent: triggerEvent.payout_percent,
         payout_amount: payoutAmount,
         status: claimStatus,
-        fraud_flag: fraudResult.softFail
+        fraud_flag: fraudFlag
       });
 
       let walletTransaction = null;
