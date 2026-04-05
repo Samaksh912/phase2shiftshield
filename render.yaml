@@ -18,7 +18,7 @@ services:
       # ML_SERVICE_URL no longer needed — ML is now inline (see ml-client.js + ml-inline.js)
       # - key: ML_SERVICE_URL
       #   value: https://shiftshield-ml.onrender.com
-      # Backend URL: https://shiftshield-backend-5x53.onrender.com
+      # Backend URL: https://shiftshield-backend-5umk.onrender.com
       - key: SUPABASE_URL
         value: https://ntwgaooqahukkngtszzd.supabase.co
       - key: SUPABASE_SERVICE_KEY
