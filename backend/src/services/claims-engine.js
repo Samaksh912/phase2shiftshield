@@ -121,7 +121,7 @@ class ClaimsEngine {
         outcome: claimStatus,
         claim,
         wallet_transaction: walletTransaction,
-        checks: fraudResult.checks
+        checks: typeof fraudResult !== "undefined" ? fraudResult.checks : []
       });
     }
 
