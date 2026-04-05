@@ -175,7 +175,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
+        final router = GoRouter.of(context);
         Navigator.of(context).popUntil((route) => route.isFirst);
+        router.go(AppRoutes.dashboard);
         return;
       }
 
@@ -235,13 +237,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
     if (!mounted) return;
 
     // Signal the dashboard to refresh and show a success snackbar.
-    // Must be done before popping so DashboardScreen can receive the event.
     AppEvents.notifyPolicyPurchased();
 
-    // QuoteScreen + PaymentScreen were both pushed via Navigator.push on top
-    // of GoRouter's /dashboard route. context.go('/dashboard') is a no-op when
-    // already at that location. Pop imperatively back to the base GoRouter route.
+    // QuoteScreen + PaymentScreen were pushed via Navigator.push on top of GoRouter.
+    // After popping, GoRouter may be at /rider-profile (signup flow) or /dashboard
+    // (login flow). Capture router before pop then explicitly go to dashboard.
+    final router = GoRouter.of(context);
     Navigator.of(context).popUntil((route) => route.isFirst);
+    router.go(AppRoutes.dashboard);
   }
 
   // ───────────────────────────────────────────

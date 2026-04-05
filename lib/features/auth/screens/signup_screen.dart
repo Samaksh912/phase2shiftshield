@@ -7,6 +7,7 @@ import '../../../core/services/api_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/router/app_router.dart';
 import '../widgets/animated_network_background.dart';
+import '../widgets/demo_credentials_box.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -41,12 +42,31 @@ class _SignupScreenState extends State<SignupScreen> {
         'message=${e.message} raw=${e.rawBody}',
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message),
-          backgroundColor: Colors.red.shade700,
-        ),
-      );
+      if (e.errorCode == 'duplicate_registration') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'This number already has an account.',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            backgroundColor: Colors.orange.shade700,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'LOG IN',
+              textColor: Colors.white,
+              onPressed: () => context.go(AppRoutes.login),
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
     } catch (error, stackTrace) {
       debugPrint('[SignupScreen] Unexpected error: $error');
       debugPrint('[SignupScreen] Stack trace: $stackTrace');
@@ -440,6 +460,10 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 ),
 
+                const SizedBox(height: 16),
+                DemoCredentialsBox(onTap: (phone) {
+                  _mobileController.text = phone;
+                }),
                 const Spacer(),
 
                 // Footer Decorative

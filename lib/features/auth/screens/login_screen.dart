@@ -7,97 +7,7 @@ import '../../../core/services/api_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/router/app_router.dart';
 import '../widgets/animated_network_background.dart';
-
-class _DemoCredentialsBox extends StatefulWidget {
-  final ValueChanged<String> onTap;
-  const _DemoCredentialsBox({required this.onTap});
-  @override
-  State<_DemoCredentialsBox> createState() => _DemoCredentialsBoxState();
-}
-
-class _DemoCredentialsBoxState extends State<_DemoCredentialsBox> {
-  bool _expanded = false;
-
-  static const _demos = [
-    ('9012345678', '1201'),
-    ('9012345679', '1202'),
-    ('9012345680', '1203'),
-    ('9012345681', '1204'),
-    ('9012345682', '1205'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => setState(() => _expanded = !_expanded),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: context.colors.surfaceContainerLow.withValues(alpha: 0.6),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: context.colors.outline.withValues(alpha: 0.12),
-          ),
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.science_outlined, size: 14, color: context.colors.primary.withValues(alpha: 0.7)),
-                const SizedBox(width: 6),
-                Text(
-                  'DEMO CREDENTIALS',
-                  style: GoogleFonts.manrope(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
-                    color: context.colors.onSurfaceVariant.withValues(alpha: 0.7),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Icon(
-                  _expanded ? Icons.expand_less : Icons.expand_more,
-                  size: 14,
-                  color: context.colors.onSurfaceVariant.withValues(alpha: 0.5),
-                ),
-              ],
-            ),
-            if (_expanded) ...[
-              const SizedBox(height: 10),
-              ..._demos.map((d) => GestureDetector(
-                onTap: () => widget.onTap(d.$1),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(d.$1, style: GoogleFonts.spaceGrotesk(
-                        fontSize: 13, fontWeight: FontWeight.w600,
-                        color: context.colors.primary,
-                      )),
-                      Text('OTP: ${d.$2}', style: GoogleFonts.manrope(
-                        fontSize: 12, color: context.colors.onSurfaceVariant,
-                      )),
-                    ],
-                  ),
-                ),
-              )),
-              const SizedBox(height: 4),
-              Text(
-                'Tap a number to autofill',
-                style: GoogleFonts.manrope(
-                  fontSize: 10,
-                  color: context.colors.onSurfaceVariant.withValues(alpha: 0.5),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
+import '../widgets/demo_credentials_box.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -515,7 +425,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 16),
                 // Demo credentials box
-                _DemoCredentialsBox(onTap: (phone) {
+                DemoCredentialsBox(onTap: (phone) {
                   _mobileController.text = phone;
                 }),
                 const Spacer(),
