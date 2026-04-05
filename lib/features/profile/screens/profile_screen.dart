@@ -30,6 +30,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Map<String, dynamic> _rider = {};
   List<dynamic> _zones = [];
+  Map<String, String> _cityNames = {}; // zoneId -> cityName
   Map<String, dynamic> _baselines = {};
   Map<String, dynamic> _preferences = {};
 
@@ -60,12 +61,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final citiesRes = responses[1];
       final policyRes = responses[2];
 
-      // Flatten zones from all cities
+      // Flatten zones from all cities, build cityName lookup
       final cities = (citiesRes['cities'] as List<dynamic>?) ?? [];
       final allZones = <dynamic>[];
+      final cityNames = <String, String>{};
       for (final city in cities) {
         final cityMap = city as Map<String, dynamic>;
+        final cityId = cityMap['id'] as String? ?? '';
+        final cityName = cityMap['name'] as String? ?? cityId;
         final cityZones = (cityMap['zones'] as List<dynamic>?) ?? [];
+        for (final z in cityZones) {
+          final zoneId = (z as Map<String, dynamic>)['id'] as String? ?? '';
+          cityNames[zoneId] = cityName;
+        }
         allZones.addAll(cityZones);
       }
 
@@ -99,6 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _setupState(
         riderData: riderData,
         zonesData: allZones,
+        cityNames: cityNames,
         hasPolicy:
             policyRes.containsKey('current_policy') && policyRes['current_policy'] != null,
       );
@@ -107,6 +116,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _setupState(
         riderData: mockProfileData['rider'],
         zonesData: mockZonesList['zones'],
+        cityNames: {},
         hasPolicy: false,
       );
     }
@@ -115,6 +125,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _setupState({
     required Map<String, dynamic> riderData,
     required List<dynamic> zonesData,
+    required Map<String, String> cityNames,
     required bool hasPolicy,
   }) {
     setState(() {
@@ -122,6 +133,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _baselines = Map<String, dynamic>.from(_rider['baselines'] ?? {});
       _preferences = Map<String, dynamic>.from(_rider['preferences'] ?? {});
       _zones = zonesData;
+      _cityNames = cityNames;
       _hasActivePolicy = hasPolicy;
 
       _upiController.text = _preferences['upi_id'] ?? '';
@@ -248,7 +260,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     left: 24,
                     right: 24,
                     top: 24,
-                    bottom: 200, // Padding for Save button & Bottom Nav
+                    bottom: 140, // Padding for floating Save button + Bottom Nav
                   ),
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
@@ -263,6 +275,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ZoneSelectionCard(
                               rider: _rider,
                               zones: _zones,
+                              cityNames: _cityNames,
                               isLocked: _hasActivePolicy,
                               onZoneChanged: (newZoneId) {
                                 final newZone = _zones.firstWhere(
@@ -308,44 +321,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             .slideY(begin: 0.05, curve: Curves.easeOutQuad),
 
                       const SizedBox(height: 24),
-                      if (_baselines.isNotEmpty)
+                      if (_baselines.isNotEmpty &&
+                          ((_baselines['lunch'] ?? 0) > 0 ||
+                              (_baselines['dinner'] ?? 0) > 0))
                         BaselineEarningsCard(baselines: _baselines)
                             .animate(delay: 150.ms)
                             .fadeIn(duration: 400.ms)
                             .slideY(begin: 0.05, curve: Curves.easeOutQuad),
+
+                      const SizedBox(height: 32),
+
+                      // Delete Account — static at end of page
+                      if (!_isLoading)
+                        TextButton.icon(
+                          onPressed: _deleteAccount,
+                          icon: const Icon(
+                            Icons.delete_forever_outlined,
+                            size: 18,
+                            color: Colors.red,
+                          ),
+                          label: const Text(
+                            'DELETE ACCOUNT',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1.2,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+
+                      const SizedBox(height: 8),
                     ]),
                   ),
                 ),
               ],
             ),
 
-            // Delete Account button
-            Positioned(
-              bottom: 188,
-              left: 24,
-              right: 24,
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 300),
-                opacity: _isLoading ? 0.0 : 1.0,
-                child: TextButton.icon(
-                  onPressed: _deleteAccount,
-                  icon: const Icon(Icons.delete_forever_outlined, size: 18, color: Colors.red),
-                  label: const Text(
-                    'DELETE ACCOUNT',
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
             // Save Changes CTA
             Positioned(
-              bottom: 120,
+              bottom: 80,
               left: 24,
               right: 24,
               child: AnimatedOpacity(

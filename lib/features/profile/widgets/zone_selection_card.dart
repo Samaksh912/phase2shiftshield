@@ -6,6 +6,7 @@ import '../../../theme/app_colors.dart';
 class ZoneSelectionCard extends StatelessWidget {
   final Map<String, dynamic> rider;
   final List<dynamic> zones;
+  final Map<String, String> cityNames;
   final bool isLocked;
   final ValueChanged<String> onZoneChanged;
 
@@ -13,9 +14,86 @@ class ZoneSelectionCard extends StatelessWidget {
     super.key,
     required this.rider,
     required this.zones,
+    required this.cityNames,
     required this.isLocked,
     required this.onZoneChanged,
   });
+
+  List<Widget> _buildGroupedZones(BuildContext sheetContext) {
+    // Group zones by city
+    final grouped = <String, List<Map<String, dynamic>>>{};
+    for (final z in zones) {
+      final zoneMap = z as Map<String, dynamic>;
+      final zoneId = zoneMap['id'] as String? ?? '';
+      final city = cityNames[zoneId] ?? (zoneMap['city_id'] as String? ?? 'Other');
+      grouped.putIfAbsent(city, () => []).add(zoneMap);
+    }
+
+    final items = <Widget>[];
+    for (final entry in grouped.entries) {
+      items.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8, top: 4),
+          child: Text(
+            entry.key.toUpperCase(),
+            style: GoogleFonts.manrope(
+              color: sheetContext.colors.onSurfaceVariant,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
+            ),
+          ),
+        ),
+      );
+      for (final zone in entry.value) {
+        final zoneId = zone['id'] as String;
+        final zoneName = zone['name'] as String;
+        final isSelected = rider['zone_id'] == zoneId;
+        items.add(
+          InkWell(
+            onTap: () {
+              onZoneChanged(zoneId);
+              Navigator.pop(sheetContext);
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? sheetContext.colors.primary.withValues(alpha: 0.1)
+                    : sheetContext.colors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isSelected
+                      ? sheetContext.colors.primary.withValues(alpha: 0.5)
+                      : Colors.transparent,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    zoneName,
+                    style: GoogleFonts.spaceGrotesk(
+                      color: isSelected
+                          ? sheetContext.colors.primary
+                          : sheetContext.colors.onSurface,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (isSelected)
+                    Icon(Icons.check_circle, color: sheetContext.colors.primary),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+    }
+    return items;
+  }
 
   void _showZonePicker(BuildContext context) {
     showModalBottomSheet(
@@ -74,54 +152,7 @@ class ZoneSelectionCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          ...zones.map((z) {
-                            final zoneId = z['id'] as String;
-                            final zoneName = z['name'] as String;
-                            final isSelected = rider['zone_id'] == zoneId;
-
-                            return InkWell(
-                              onTap: () {
-                                onZoneChanged(zoneId);
-                                Navigator.pop(context);
-                              },
-                              borderRadius: BorderRadius.circular(16),
-                              child: Container(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: isSelected
-                                      ? context.colors.primary.withValues(alpha: 0.1)
-                                      : context.colors.surfaceContainerLow,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? context.colors.primary.withValues(alpha: 0.5)
-                                        : Colors.transparent,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      zoneName,
-                                      style: GoogleFonts.spaceGrotesk(
-                                        color: isSelected
-                                            ? context.colors.primary
-                                            : context.colors.onSurface,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    if (isSelected)
-                                      Icon(
-                                        Icons.check_circle,
-                                        color: context.colors.primary,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }),
+                          ..._buildGroupedZones(context),
                         ],
                       ),
                     ),
