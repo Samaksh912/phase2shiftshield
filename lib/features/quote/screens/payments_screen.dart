@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/foundation.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/app_events.dart';
 import '../../../theme/app_colors.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/auth_service.dart';
@@ -180,7 +181,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     setState(() => _state = _FlowState.refreshing);
 
     // Fire all four calls concurrently; individual failures are swallowed —
-    // the dashboard itself will retry. Coverage is already confirmed above.
+    // the dashboard itself will retry on navigation back.
     await Future.wait([
       ApiService.getCurrentPolicy().catchError((_) => <String, dynamic>{}),
       ApiService.getDashboard().catchError((_) => <String, dynamic>{}),
@@ -188,13 +189,21 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ApiService.getNotifications().catchError((_) => <String, dynamic>{}),
     ]);
 
-    // Store results in your state management layer here if applicable
-    // e.g. context.read<AppState>().updateFrom(policy, dashboard, wallet, notifs)
-
     setState(() => _state = _FlowState.success);
 
+    // Brief pause to show the success checkmark before navigating
+    await Future.delayed(const Duration(milliseconds: 900));
+
     if (!mounted) return;
-    context.go(AppRoutes.dashboard);
+
+    // Signal the dashboard to refresh and show a success snackbar.
+    // Must be done before popping so DashboardScreen can receive the event.
+    AppEvents.notifyPolicyPurchased();
+
+    // QuoteScreen + PaymentScreen were both pushed via Navigator.push on top
+    // of GoRouter's /dashboard route. context.go('/dashboard') is a no-op when
+    // already at that location. Pop imperatively back to the base GoRouter route.
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   // ───────────────────────────────────────────

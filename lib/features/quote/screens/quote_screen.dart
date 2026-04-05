@@ -182,33 +182,47 @@ class _QuoteScreenState extends State<QuoteScreen>
     if (_errorMsg != null) {
       return Scaffold(
         backgroundColor: context.colors.surface,
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.cloud_off,
-                  size: 64,
-                  color: context.colors.onSurfaceVariant,
+        body: Stack(
+          children: [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.cloud_off,
+                      size: 64,
+                      color: context.colors.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _errorMsg!,
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.manrope(
+                        color: context.colors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: _fetchQuote,
+                      child: const Text('Retry'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  _errorMsg!,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.manrope(
-                    color: context.colors.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _fetchQuote,
-                  child: const Text('Retry'),
-                ),
-              ],
+              ),
             ),
-          ),
+            // Always show back button on error so user can leave
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16, top: 8),
+                child: IconButton(
+                  icon: Icon(Icons.arrow_back, color: context.colors.primary),
+                  onPressed: _handleBack,
+                ),
+              ),
+            ),
+          ],
         ),
       );
     }

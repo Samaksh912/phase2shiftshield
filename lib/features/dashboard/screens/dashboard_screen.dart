@@ -14,6 +14,7 @@ import '../widgets/recent_payouts_list.dart';
 import '../widgets/no_claims_card.dart';
 import '../widgets/floating_cta_button.dart';
 import '../../quote/screens/quote_screen.dart';
+import '../../../core/app_events.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -32,7 +33,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _fetchDashboard();
+    AppEvents.policyPurchased.addListener(_onPolicyPurchased);
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeOpenQuoteAfterSignup());
+  }
+
+  void _onPolicyPurchased() {
+    if (!mounted) return;
+    _fetchDashboard();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text(
+          'Policy activated! Your coverage starts next week.',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.green.shade700,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    AppEvents.policyPurchased.removeListener(_onPolicyPurchased);
+    super.dispose();
   }
 
   Future<void> _maybeOpenQuoteAfterSignup() async {
