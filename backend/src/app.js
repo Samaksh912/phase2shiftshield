@@ -33,7 +33,11 @@ function buildCorsMiddleware(config) {
 
   return (req, res, next) => {
     const origin = req.headers.origin;
-    const originAllowed = !origin || allowAnyOrigin || allowedOrigins.has(origin);
+    const isLocalhost = origin && (
+      origin.startsWith("http://localhost:") ||
+      origin.startsWith("http://127.0.0.1:")
+    );
+    const originAllowed = !origin || allowAnyOrigin || allowedOrigins.has(origin) || isLocalhost;
 
     if (origin && originAllowed) {
       res.setHeader("Access-Control-Allow-Origin", allowAnyOrigin ? "*" : origin);

@@ -24,7 +24,7 @@ services:
       - key: SUPABASE_SERVICE_KEY
         sync: false
       - key: FRONTEND_ORIGIN
-        value: https://phase2guidewire.vercel.app,http://localhost:53711,http://localhost:62844,http://localhost:8080,http://localhost:3000,http://127.0.0.1:53711,http://127.0.0.1:62844,http://127.0.0.1:8080
+        value: https://phase2guidewire.vercel.app
       - key: TWILIO_ACCOUNT_SID
         sync: false
 
