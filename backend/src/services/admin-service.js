@@ -113,7 +113,7 @@ class AdminService {
       condition_b_data: payload.condition_b || defaultConditionB()
     });
 
-    const processed = await this.claimsEngine.processClaimsForTrigger(triggerEvent);
+    const processed = await this.claimsEngine.processClaimsForTrigger({ ...triggerEvent, is_simulation: true });
 
     return {
       trigger_event: triggerEvent,

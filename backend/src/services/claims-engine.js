@@ -45,7 +45,12 @@ class ClaimsEngine {
 
     for (const policy of policies) {
       const rider = policy.rider;
-      const existingClaim = await this.dataStore.getClaimByUnique(policy.id, shiftType, claimDate);
+      let existingClaim = await this.dataStore.getClaimByUnique(policy.id, shiftType, claimDate);
+      // Simulation: clear stale duplicate so fresh claim is always created
+      if (existingClaim && triggerEvent.is_simulation) {
+        await this.dataStore.deleteClaimById(existingClaim.id);
+        existingClaim = null;
+      }
       const platformRider = await this.dataStore.getMockPlatformRiderByPhone(rider.phone);
       const fraudResult = runFraudChecks({
         rider,
