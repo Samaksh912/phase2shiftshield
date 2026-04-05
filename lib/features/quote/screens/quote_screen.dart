@@ -26,6 +26,7 @@ class _QuoteScreenState extends State<QuoteScreen>
   Map<String, dynamic>? _quote;
   bool _isLoading = true;
   String? _errorMsg;
+  bool _alreadyPurchased = false; // next-week policy already exists
   Timer? _countdownTimer;
   Duration _timeLeft = Duration.zero;
 
@@ -72,12 +73,26 @@ class _QuoteScreenState extends State<QuoteScreen>
           _nextMonday(),
         );
       } else {
-        data = await ApiService.generateQuote(_nextMonday());
+        final nextMonday = _nextMonday();
+        final results = await Future.wait([
+          ApiService.generateQuote(nextMonday),
+          ApiService.getPolicyHistory().catchError((_) => <String, dynamic>{}),
+        ]);
+        data = results[0];
+        // Check if a scheduled/active policy already exists for next week
+        final historyPolicies = (results[1]['policies'] as List<dynamic>?) ?? [];
+        final alreadyPurchased = historyPolicies.any((p) {
+          final policy = p as Map<String, dynamic>;
+          return policy['week_start'] == nextMonday &&
+              (policy['status'] == 'scheduled' || policy['status'] == 'active');
+        });
+        if (alreadyPurchased) {
+          setState(() => _alreadyPurchased = true);
+        }
       }
       final quote = data['quote'] as Map<String, dynamic>;
       setState(() {
         _quote = quote;
-        // Cache the fields we need outside build()
         _premium = quote['premium'] as int? ?? 0;
         _weekStart = quote['week_start'] as String? ?? '';
         _weekEnd = quote['week_end'] as String? ?? '';
@@ -701,7 +716,7 @@ class _QuoteScreenState extends State<QuoteScreen>
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: canPurchase
+                  onPressed: (canPurchase && !_alreadyPurchased)
                       ? () => _buyPolicy(widget.isSignupFlow ? null : quote['id'] as String)
                       : null,
                   style: ElevatedButton.styleFrom(
@@ -715,7 +730,7 @@ class _QuoteScreenState extends State<QuoteScreen>
                   ),
                   child: Ink(
                     decoration: BoxDecoration(
-                      gradient: canPurchase
+                      gradient: (canPurchase && !_alreadyPurchased)
                           ? LinearGradient(
                               colors: [
                                 context.colors.primary,
@@ -733,19 +748,19 @@ class _QuoteScreenState extends State<QuoteScreen>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            canPurchase
-                                ? 'BUY POLICY — ₹$premium'
-                                : 'PURCHASE UNAVAILABLE',
+                            _alreadyPurchased
+                                ? 'NEXT WEEK ALREADY COVERED'
+                                : canPurchase
+                                    ? 'BUY POLICY — ₹$premium'
+                                    : 'PURCHASE UNAVAILABLE',
                             style: GoogleFonts.manrope(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1.5,
-                              color: canPurchase
-                                  ? context.colors.onPrimaryFixed
-                                  : context.colors.onSurfaceVariant,
+                              color: context.colors.onSurfaceVariant,
                             ),
                           ),
-                          if (canPurchase) ...[
+                          if (canPurchase && !_alreadyPurchased) ...[
                             const SizedBox(width: 8),
                             Icon(
                               Icons.arrow_forward,

@@ -166,7 +166,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
             bottom: 110, // Places it cleanly above your custom global bottom nav bar
             left: 16,
             right: 16,
-            child: FloatingCtaButton(isLoading: _isLoading),
+            child: FloatingCtaButton(
+              isLoading: _isLoading,
+              nextWeekAvailable: _data['next_week_quote_available'] as bool? ?? true,
+            ),
           ),
         ],
       ),

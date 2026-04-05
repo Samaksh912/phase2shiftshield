@@ -160,6 +160,44 @@ class _PaymentScreenState extends State<PaymentScreen> {
       await _refreshAppState();
     } on ApiException catch (e) {
       debugPrint('[PaymentScreen] ApiException in _createPolicy: ${e.errorCode} — ${e.message}');
+
+      // Already covered — treat same as success
+      if (e.errorCode == 'policy_exists') {
+        AppEvents.notifyPolicyPurchased();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'You already have coverage for next week!',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            backgroundColor: Colors.green.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        return;
+      }
+
+      // Phone already registered — send to login
+      if (e.errorCode == 'duplicate_registration') {
+        SignupSession.clear();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'This number already has an account. Please log in.',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            backgroundColor: Colors.orange.shade700,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        context.go(AppRoutes.login);
+        return;
+      }
+
       setState(() {
         _state = _FlowState.policyFailed;
         _errorMessage = _friendlyPolicyError(e.errorCode, e.message);
