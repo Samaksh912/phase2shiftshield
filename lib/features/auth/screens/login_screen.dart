@@ -426,10 +426,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
 
                 const SizedBox(height: 16),
-                // Demo credentials box
-                DemoCredentialsBox(onTap: (phone) {
-                  _mobileController.text = phone;
-                }),
+                DemoCredentialsBox(
+                  label: 'DEMO LOGIN CREDENTIALS',
+                  credentials: const [
+                    ('9876543210', '9324'),
+                    ('9123456780', '2841'),
+                    ('9988776655', '6157'),
+                    ('9345678123', '4408'),
+                    ('9451203344', '7712'),
+                  ],
+                  onTap: (phone) => _mobileController.text = phone,
+                ),
                 const SizedBox(height: 24),
                 // Footer Decorative
                 Row(

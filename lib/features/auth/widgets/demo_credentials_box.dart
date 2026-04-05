@@ -4,7 +4,15 @@ import '../../../theme/app_colors.dart';
 
 class DemoCredentialsBox extends StatefulWidget {
   final ValueChanged<String> onTap;
-  const DemoCredentialsBox({super.key, required this.onTap});
+  final List<(String, String)> credentials;
+  final String label;
+
+  const DemoCredentialsBox({
+    super.key,
+    required this.onTap,
+    required this.credentials,
+    this.label = 'DEMO CREDENTIALS',
+  });
 
   @override
   State<DemoCredentialsBox> createState() => _DemoCredentialsBoxState();
@@ -12,14 +20,6 @@ class DemoCredentialsBox extends StatefulWidget {
 
 class _DemoCredentialsBoxState extends State<DemoCredentialsBox> {
   bool _expanded = false;
-
-  static const _demos = [
-    ('9012345678', '1201'),
-    ('9012345679', '1202'),
-    ('9012345680', '1203'),
-    ('9012345681', '1204'),
-    ('9012345682', '1205'),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -44,12 +44,13 @@ class _DemoCredentialsBoxState extends State<DemoCredentialsBox> {
                     color: context.colors.primary.withValues(alpha: 0.7)),
                 const SizedBox(width: 6),
                 Text(
-                  'DEMO CREDENTIALS',
+                  widget.label,
                   style: GoogleFonts.manrope(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.5,
-                    color: context.colors.onSurfaceVariant.withValues(alpha: 0.7),
+                    color: context.colors.onSurfaceVariant
+                        .withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -68,7 +69,7 @@ class _DemoCredentialsBoxState extends State<DemoCredentialsBox> {
                   physics: const BouncingScrollPhysics(),
                   child: Column(
                     children: [
-                      ..._demos.map((d) => GestureDetector(
+                      ...widget.credentials.map((d) => GestureDetector(
                             onTap: () {
                               widget.onTap(d.$1);
                               setState(() => _expanded = false);

@@ -19,114 +19,18 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _mobileController = TextEditingController();
   bool _isLoading = false;
-
-  // Real-time duplicate check state
-  bool _isChecking = false;
   bool _isDuplicate = false;
-  bool _otpAlreadySent = false;
-  String? _checkedPhone;
-
-  @override
-  void initState() {
-    super.initState();
-    _mobileController.addListener(_onPhoneChanged);
-  }
-
-  void _onPhoneChanged() {
-    final phone = _mobileController.text.trim();
-    if (phone.length != 10) {
-      if (_isDuplicate || _otpAlreadySent || _checkedPhone != null) {
-        setState(() {
-          _isDuplicate = false;
-          _otpAlreadySent = false;
-          _checkedPhone = null;
-        });
-      }
-      return;
-    }
-    // Already checked or currently checking this exact number
-    if (phone == _checkedPhone || _isChecking) return;
-    _checkPhoneOnType(phone);
-  }
-
-  Future<void> _checkPhoneOnType(String phone) async {
-    setState(() {
-      _isChecking = true;
-      _isDuplicate = false;
-      _otpAlreadySent = false;
-    });
-    _checkedPhone = phone;
-    try {
-      await AuthService.clearToken();
-      await ApiService.sendSignupOtp(phone);
-      // OTP sent successfully — remember so _getOtp can skip the second call
-      if (mounted) setState(() => _otpAlreadySent = true);
-    } on ApiException catch (e) {
-      if (e.errorCode == 'duplicate_registration') {
-        if (mounted) {
-          setState(() => _isDuplicate = true);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text(
-                'This number already has an account.',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              backgroundColor: Colors.orange.shade700,
-              behavior: SnackBarBehavior.floating,
-              duration: const Duration(seconds: 5),
-              action: SnackBarAction(
-                label: 'LOG IN',
-                textColor: Colors.white,
-                onPressed: () => context.go(AppRoutes.login),
-              ),
-            ),
-          );
-        }
-      }
-      // Other errors: silently ignore — will surface on button press if needed
-    } catch (_) {
-      // Network error on background check: ignore silently
-    } finally {
-      if (mounted) setState(() => _isChecking = false);
-    }
-  }
 
   Future<void> _getOtp() async {
     final mobileNumber = _mobileController.text.trim();
+    debugPrint('[SignupScreen] _getOtp phone=$mobileNumber');
     if (mobileNumber.length != 10) return;
 
-    // Already confirmed as duplicate — show error and stop
-    if (_isDuplicate) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'This number already has an account.',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          backgroundColor: Colors.orange.shade700,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 5),
-          action: SnackBarAction(
-            label: 'LOG IN',
-            textColor: Colors.white,
-            onPressed: () => context.go(AppRoutes.login),
-          ),
-        ),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _isDuplicate = false;
+    });
     try {
-      // OTP was already sent by the background check — skip the API call
-      if (_otpAlreadySent && _checkedPhone == mobileNumber) {
-        await AuthService.savePhone(mobileNumber);
-        if (!mounted) return;
-        context.push(AppRoutes.verifyOtpPath(mobileNumber), extra: {'isLogin': false});
-        return;
-      }
-
-      debugPrint('[SignupScreen] Calling sendSignupOtp for phone=$mobileNumber');
       await AuthService.clearToken();
       await ApiService.sendSignupOtp(mobileNumber);
       await AuthService.savePhone(mobileNumber);
@@ -174,7 +78,6 @@ class _SignupScreenState extends State<SignupScreen> {
 
   @override
   void dispose() {
-    _mobileController.removeListener(_onPhoneChanged);
     _mobileController.dispose();
     super.dispose();
   }
@@ -351,10 +254,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                     ),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
-                                      color: _isDuplicate
-                                          ? Colors.orange.shade700
-                                          : context.colors.onSurface
-                                              .withValues(alpha: 0.1),
+                                      color: context.colors.onSurface
+                                          .withValues(alpha: 0.1),
                                     ),
                                   ),
                                   child: Text(
@@ -371,17 +272,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                   child: Container(
                                     height: 64,
                                     decoration: BoxDecoration(
-                                      color: _isDuplicate
-                                          ? Colors.orange.withValues(alpha: 0.08)
-                                          : context.colors.onSurface
-                                              .withValues(alpha: 0.05),
+                                      color: context.colors.onSurface
+                                          .withValues(alpha: 0.05),
                                       borderRadius: BorderRadius.circular(12),
-                                      border: _isDuplicate
-                                          ? Border.all(
-                                              color: Colors.orange.shade700,
-                                              width: 1.5,
-                                            )
-                                          : null,
                                     ),
                                     child: TextField(
                                       controller: _mobileController,
@@ -407,56 +300,20 @@ class _SignupScreenState extends State<SignupScreen> {
                                           color: context.colors.onSurface
                                               .withValues(alpha: 0.4),
                                         ),
-                                        suffixIcon: _isChecking
-                                            ? Padding(
-                                                padding: const EdgeInsets.all(20),
-                                                child: SizedBox(
-                                                  width: 16,
-                                                  height: 16,
-                                                  child: CircularProgressIndicator(
-                                                    strokeWidth: 2,
-                                                    color: context.colors.primary.withValues(alpha: 0.6),
-                                                  ),
-                                                ),
-                                              )
-                                            : _isDuplicate
-                                                ? Icon(Icons.error_outline,
-                                                    color: Colors.orange.shade700,
-                                                    size: 20)
-                                                : null,
                                       ),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                            if (_isDuplicate) ...[
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Icon(Icons.info_outline,
-                                      size: 13,
-                                      color: Colors.orange.shade700),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    'Already registered — tap LOG IN',
-                                    style: GoogleFonts.manrope(
-                                      fontSize: 12,
-                                      color: Colors.orange.shade700,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 24),
 
                             // CTA Section
                             SizedBox(
                               width: double.infinity,
                               height: 64,
                               child: ElevatedButton(
-                                onPressed: (_isLoading || _isDuplicate || _isChecking) ? null : _getOtp,
+                                onPressed: _isLoading ? null : _getOtp,
                                 style: ElevatedButton.styleFrom(
                                   padding: EdgeInsets.zero,
                                   shape: RoundedRectangleBorder(
@@ -600,9 +457,17 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
 
                 const SizedBox(height: 16),
-                DemoCredentialsBox(onTap: (phone) {
-                  _mobileController.text = phone;
-                }),
+                DemoCredentialsBox(
+                  label: 'DEMO SIGNUP CREDENTIALS',
+                  credentials: const [
+                    ('9012345678', '1201'),
+                    ('9012345679', '1202'),
+                    ('9012345680', '1203'),
+                    ('9012345681', '1204'),
+                    ('9012345682', '1205'),
+                  ],
+                  onTap: (phone) => _mobileController.text = phone,
+                ),
                 const SizedBox(height: 24),
 
                 // Footer Decorative
