@@ -23,8 +23,9 @@ services:
         value: https://ntwgaooqahukkngtszzd.supabase.co
       - key: SUPABASE_SERVICE_KEY
         sync: false
-      - key: FRONTEND_ORIGIN
-        value: https://phase2guidewire.vercel.app
+      # Empty = allow all origins (safe for demo; lock down in production)
+      - key: FRONTEND_ORIGINS
+        value: ""
       - key: TWILIO_ACCOUNT_SID
         sync: false
 
