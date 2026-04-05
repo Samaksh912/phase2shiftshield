@@ -63,7 +63,8 @@ class ClaimsEngine {
         continue;
       }
 
-      const baseline = shiftType === "lunch" ? rider.lunch_baseline : rider.dinner_baseline;
+      const rawBaseline = shiftType === "lunch" ? rider.lunch_baseline : rider.dinner_baseline;
+      const baseline = rawBaseline ?? (shiftType === "lunch" ? 420 : 680);
       const payoutAmount = Math.round((baseline * triggerEvent.payout_percent) / 100);
       const claimStatus = fraudResult.softFail ? "under_review" : "paid";
 
