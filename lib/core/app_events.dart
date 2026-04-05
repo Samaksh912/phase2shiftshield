@@ -6,10 +6,13 @@ class AppEvents {
   AppEvents._();
 
   static final _policyPurchased = ValueNotifier<int>(0);
+  static final _simulationCompleted = ValueNotifier<int>(0);
 
   /// Fires every time a policy is successfully purchased.
-  /// Listeners (e.g. DashboardScreen) should refresh their data.
   static ValueListenable<int> get policyPurchased => _policyPurchased;
-
   static void notifyPolicyPurchased() => _policyPurchased.value++;
+
+  /// Fires after a disruption simulation completes so claims/dashboard refresh.
+  static ValueListenable<int> get simulationCompleted => _simulationCompleted;
+  static void notifySimulationCompleted() => _simulationCompleted.value++;
 }

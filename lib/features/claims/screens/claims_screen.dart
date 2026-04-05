@@ -3,6 +3,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:flutter_animate/flutter_animate.dart' hide ShimmerEffect;
 import '../../../theme/app_colors.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/app_events.dart';
 import '../data/claims_mock_data.dart';
 import '../widgets/claims_app_bar.dart';
 import '../widgets/claims_summary_section.dart';
@@ -24,6 +25,13 @@ class _ClaimsScreenState extends State<ClaimsScreen> {
   void initState() {
     super.initState();
     _fetchClaimsData();
+    AppEvents.simulationCompleted.addListener(_fetchClaimsData);
+  }
+
+  @override
+  void dispose() {
+    AppEvents.simulationCompleted.removeListener(_fetchClaimsData);
+    super.dispose();
   }
 
   Future<void> _fetchClaimsData() async {

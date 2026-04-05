@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart' hide ShimmerEffect;
+import 'package:google_fonts/google_fonts.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../../theme/app_colors.dart';
 import '../../../core/services/api_service.dart';
@@ -15,6 +16,7 @@ import '../widgets/no_claims_card.dart';
 import '../widgets/floating_cta_button.dart';
 import '../../quote/screens/quote_screen.dart';
 import '../../../core/app_events.dart';
+import '../widgets/simulate_disruption_dialog.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -34,6 +36,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     _fetchDashboard();
     AppEvents.policyPurchased.addListener(_onPolicyPurchased);
+    AppEvents.simulationCompleted.addListener(_fetchDashboard);
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeOpenQuoteAfterSignup());
   }
 
@@ -56,6 +59,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void dispose() {
     AppEvents.policyPurchased.removeListener(_onPolicyPurchased);
+    AppEvents.simulationCompleted.removeListener(_fetchDashboard);
     super.dispose();
   }
 
@@ -162,8 +166,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
+          // Simulate disruption button — top right corner
           Positioned(
-            bottom: 110, // Places it cleanly above your custom global bottom nav bar
+            top: 0,
+            right: 16,
+            child: SafeArea(
+              child: GestureDetector(
+                onTap: () => showSimulateDisruptionSheet(context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: context.colors.errorContainer.withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: context.colors.error.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.bolt, size: 14, color: context.colors.error),
+                    const SizedBox(width: 4),
+                    Text('SIMULATE',
+                        style: GoogleFonts.spaceGrotesk(
+                          fontSize: 11, fontWeight: FontWeight.w800,
+                          letterSpacing: 1.2,
+                          color: context.colors.error,
+                        )),
+                  ]),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 110,
             left: 16,
             right: 16,
             child: FloatingCtaButton(

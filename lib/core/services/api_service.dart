@@ -397,6 +397,25 @@ class ApiService {
     }
     return _get('/api/notifications');
   }
+
+  // ─────────────────────────────────────────────
+  // SIMULATION (admin — no auth required)
+  // ─────────────────────────────────────────────
+
+  /// POST /api/admin/simulate-trigger
+  static Future<Map<String, dynamic>> simulateTrigger({
+    required String zoneId,
+    required String triggerType, // 'rain' | 'heat' | 'aqi'
+    required String shiftType,   // 'lunch' | 'dinner'
+    int severityLevel = 2,
+  }) {
+    return _post('/api/admin/simulate-trigger', {
+      'zone_id': zoneId,
+      'trigger_type': triggerType,
+      'shift_type': shiftType,
+      'severity_level': severityLevel,
+    });
+  }
 }
 
 // ─────────────────────────────────────────────
