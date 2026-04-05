@@ -58,6 +58,15 @@ function buildAuthRouter({ authService }) {
     }
   });
 
+  router.delete("/account", authMiddleware(), async (req, res, next) => {
+    try {
+      const response = await authService.deleteAccount({ riderId: req.user.rider_id });
+      return res.status(200).json(response);
+    } catch (error) {
+      return next(error);
+    }
+  });
+
   router.get("/me", authMiddleware(), async (req, res, next) => {
     try {
       const response = await authService.getSessionProfile({

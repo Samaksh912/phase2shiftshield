@@ -90,6 +90,14 @@ class ApiService {
     );
   }
 
+  static Future<Map<String, dynamic>> _delete(String path) async {
+    final headers = await _authHeaders();
+    final uri = Uri.parse('$_base$path');
+    _log('DELETE $uri');
+    final response = await http.delete(uri, headers: headers);
+    return _handleResponse(response);
+  }
+
   static Future<Map<String, dynamic>> _get(String path) async {
     final headers = await _authHeaders();
     final uri = Uri.parse('$_base$path');
@@ -212,6 +220,19 @@ class ApiService {
   // ─────────────────────────────────────────────
   // QUOTES
   // ─────────────────────────────────────────────
+
+  /// POST /api/quotes/preview  (no auth — used during signup flow)
+  static Future<Map<String, dynamic>> previewQuote(
+    String zoneId,
+    String shiftsCovered,
+    String weekStart,
+  ) {
+    return _post('/api/quotes/preview', {
+      'zone_id': zoneId,
+      'shifts_covered': shiftsCovered,
+      'week_start': weekStart,
+    });
+  }
 
   /// POST /api/quotes/generate
   static Future<Map<String, dynamic>> generateQuote(String weekStart) {
@@ -360,6 +381,11 @@ class ApiService {
   // ─────────────────────────────────────────────
   // NOTIFICATIONS
   // ─────────────────────────────────────────────
+
+  /// DELETE /api/auth/account
+  static Future<Map<String, dynamic>> deleteAccount() {
+    return _delete('/api/auth/account');
+  }
 
   /// GET /api/notifications
   static Future<Map<String, dynamic>> getNotifications() {

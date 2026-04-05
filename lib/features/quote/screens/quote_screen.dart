@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../theme/app_colors.dart';
+import 'package:flutter/foundation.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/models/signup_session.dart';
 import 'payments_screen.dart';
 
 class QuoteScreen extends StatefulWidget {
-  const QuoteScreen({super.key});
+  final bool isSignupFlow;
+  const QuoteScreen({super.key, this.isSignupFlow = false});
 
   @override
   State<QuoteScreen> createState() => _QuoteScreenState();
@@ -57,7 +60,20 @@ class _QuoteScreenState extends State<QuoteScreen>
       _errorMsg = null;
     });
     try {
-      final data = await ApiService.generateQuote(_nextMonday());
+      debugPrint('[QuoteScreen] _fetchQuote isSignupFlow=${widget.isSignupFlow}');
+      Map<String, dynamic> data;
+      if (widget.isSignupFlow) {
+        final session = SignupSession.payload;
+        if (session == null) throw Exception('No signup session');
+        debugPrint('[QuoteScreen] Preview quote for zone=${session['zone_id']} shifts=${session['shifts_covered']}');
+        data = await ApiService.previewQuote(
+          session['zone_id'] as String,
+          session['shifts_covered'] as String,
+          _nextMonday(),
+        );
+      } else {
+        data = await ApiService.generateQuote(_nextMonday());
+      }
       final quote = data['quote'] as Map<String, dynamic>;
       setState(() {
         _quote = quote;
@@ -117,16 +133,18 @@ class _QuoteScreenState extends State<QuoteScreen>
   // _premium / _weekStart / _weekEnd are state fields — always in scope here.
   // ─────────────────────────────────────────────────────────────────────────
 
-  void _buyPolicy(String quoteId) {
+  void _buyPolicy(String? quoteId) {
+    debugPrint('[QuoteScreen] _buyPolicy quoteId=$quoteId isSignupFlow=${widget.isSignupFlow}');
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => PaymentScreen(
           args: PaymentScreenArgs(
-            quoteId: quoteId,
+            quoteId: quoteId ?? '',
             premium: _premium,
             weekStart: _weekStart,
             weekEnd: _weekEnd,
+            isSignupFlow: widget.isSignupFlow,
           ),
         ),
       ),
@@ -670,7 +688,7 @@ class _QuoteScreenState extends State<QuoteScreen>
                 height: 56,
                 child: ElevatedButton(
                   onPressed: canPurchase
-                      ? () => _buyPolicy(quote['id'] as String)
+                      ? () => _buyPolicy(widget.isSignupFlow ? null : quote['id'] as String)
                       : null,
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.zero,

@@ -2,10 +2,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/foundation.dart';
 import '../../../theme/app_colors.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/models/signup_session.dart';
+import '../../quote/screens/quote_screen.dart';
 
 class RiderProfileScreen extends StatefulWidget {
   final String phone;
@@ -166,33 +169,28 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
 
     setState(() => _isSubmitting = true);
     try {
-      final data = await ApiService.signup({
-        'name': name,
-        'phone': widget.phone,
-        'platform': _selectedPlatform == PlatformAlignment.swiggy ? 'swiggy' : 'zomato',
-        'city_id': _selectedCityId,
-        'zone_id': _selectedZoneId,
-        'shifts_covered': _shiftsValue,
-        'payout_preference': _payoutMode == PayoutMode.wallet ? 'wallet' : 'upi',
-        'upi_id': _upiController.text.trim().isEmpty ? null : _upiController.text.trim(),
-        'verification_token': widget.verificationToken,
-      });
-      // Save the JWT token from signup response
-      final token = data['token'] as String;
-      await AuthService.saveToken(token);
-      await AuthService.savePhone(widget.phone);
-      await AuthService.markOpenQuoteAfterSignup();
-      if (!mounted) return;
-      context.go(AppRoutes.dashboard);
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message), backgroundColor: Colors.red.shade700),
+      debugPrint('[RiderProfile] Storing signup session for phone=${widget.phone}');
+      SignupSession.store(
+        phone: widget.phone,
+        verificationToken: widget.verificationToken,
+        name: name,
+        platform: _selectedPlatform == PlatformAlignment.swiggy ? 'swiggy' : 'zomato',
+        cityId: _selectedCityId!,
+        zoneId: _selectedZoneId!,
+        shiftsCovered: _shiftsValue,
+        payoutPreference: _payoutMode == PayoutMode.wallet ? 'wallet' : 'upi',
+        upiId: _upiController.text.trim().isEmpty ? null : _upiController.text.trim(),
       );
-    } catch (_) {
+      debugPrint('[RiderProfile] Navigating to QuoteScreen (signup flow)');
+      if (!mounted) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const QuoteScreen(isSignupFlow: true)),
+      );
+    } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not reach server. Is the backend running?'), backgroundColor: Colors.red),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red.shade700),
       );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);

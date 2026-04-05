@@ -1,9 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:flutter_animate/flutter_animate.dart' hide ShimmerEffect;
 import 'package:google_fonts/google_fonts.dart';
 import '../../../theme/app_colors.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/router/app_router.dart';
 
 import '../data/profile_mock_data.dart';
 import '../widgets/profile_app_bar.dart';
@@ -125,7 +129,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  Future<void> _deleteAccount() async {
+    debugPrint('[ProfileScreen] _deleteAccount tapped');
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'This will permanently delete your account, policies, wallet, and all associated data. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () { debugPrint('[ProfileScreen] Delete cancelled'); Navigator.pop(ctx, false); },
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () { debugPrint('[ProfileScreen] Delete confirmed'); Navigator.pop(ctx, true); },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    debugPrint('[ProfileScreen] Calling ApiService.deleteAccount()');
+    try {
+      await ApiService.deleteAccount();
+      debugPrint('[ProfileScreen] Account deleted, clearing auth');
+      await AuthService.logout();
+      if (!mounted) return;
+      context.go(AppRoutes.login);
+    } catch (e) {
+      debugPrint('[ProfileScreen] Delete account error: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete account: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   Future<void> _saveChanges() async {
+    debugPrint('[ProfileScreen] _saveChanges tapped, preferences=$_preferences');
     // Validate if UPI payout
     if (_preferences['payout_preference'] == 'upi' &&
         _upiController.text.trim().isEmpty) {
@@ -274,9 +319,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
 
+            // Delete Account button
+            Positioned(
+              bottom: 188,
+              left: 24,
+              right: 24,
+              child: AnimatedOpacity(
+                duration: const Duration(milliseconds: 300),
+                opacity: _isLoading ? 0.0 : 1.0,
+                child: TextButton.icon(
+                  onPressed: _deleteAccount,
+                  icon: const Icon(Icons.delete_forever_outlined, size: 18, color: Colors.red),
+                  label: const Text(
+                    'DELETE ACCOUNT',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
             // Save Changes CTA
             Positioned(
-              bottom: 120, // Sit significantly above the global nav bar shadow
+              bottom: 120,
               left: 24,
               right: 24,
               child: AnimatedOpacity(

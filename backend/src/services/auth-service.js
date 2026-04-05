@@ -473,6 +473,15 @@ class AuthService {
     return buildSessionPayload(token, rider, zone, platformRider, "demo_login");
   }
 
+  async deleteAccount({ riderId }) {
+    const rider = await this.dataStore.getRiderById(riderId);
+    if (!rider) {
+      throw buildError("Rider not found", { statusCode: 404, code: "not_found" });
+    }
+    await this.dataStore.deleteRiderAccount(riderId);
+    return { deleted: true };
+  }
+
   async getSessionProfile({ riderId, phone }) {
     const rider = await this.dataStore.getRiderById(riderId);
     if (!rider || rider.phone !== phone) {

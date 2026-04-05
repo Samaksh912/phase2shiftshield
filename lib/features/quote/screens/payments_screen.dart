@@ -2,10 +2,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/foundation.dart';
 import '../../../core/router/app_router.dart';
 import '../../../theme/app_colors.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../core/services/razorpay_service.dart';
+import '../../../core/models/signup_session.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ENTRY POINT ARGUMENTS
@@ -16,12 +19,14 @@ class PaymentScreenArgs {
   final int premium;
   final String weekStart;
   final String weekEnd;
+  final bool isSignupFlow;
 
   const PaymentScreenArgs({
     required this.quoteId,
     required this.premium,
     required this.weekStart,
     required this.weekEnd,
+    this.isSignupFlow = false,
   });
 }
 
@@ -77,6 +82,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   // ───────────────────────────────────────────
 
   void _openRazorpay() {
+    debugPrint('[PaymentScreen] Opening Razorpay for ₹${widget.args.premium} quoteId=${widget.args.quoteId} isSignupFlow=${widget.args.isSignupFlow}');
     setState(() {
       _state = _FlowState.razorpayOpen;
       _errorMessage = null;
@@ -118,24 +124,50 @@ class _PaymentScreenState extends State<PaymentScreen> {
     });
 
     try {
-      await ApiService.createPolicy(
-        widget.args.quoteId,
-        'razorpay',
-        paymentReferenceId: _razorpayPaymentId,
-        paymentStatus: 'success',
-      );
-      // Policy created ✓ — now refresh all state
+      if (widget.args.isSignupFlow) {
+        debugPrint('[PaymentScreen] Signup flow — calling signup API');
+        final session = SignupSession.payload;
+        if (session == null) throw Exception('Signup session expired. Please restart signup.');
+
+        final signupData = await ApiService.signup(session);
+        final token = signupData['token'] as String;
+        await AuthService.saveToken(token);
+        await AuthService.savePhone(session['phone'] as String);
+        debugPrint('[PaymentScreen] Signup OK, generating quote for week=${widget.args.weekStart}');
+
+        final quoteData = await ApiService.generateQuote(widget.args.weekStart);
+        final quoteId = (quoteData['quote'] as Map<String, dynamic>)['id'] as String;
+        debugPrint('[PaymentScreen] Quote generated: $quoteId, creating policy');
+
+        await ApiService.createPolicy(
+          quoteId,
+          'direct',
+          paymentReferenceId: _razorpayPaymentId,
+          paymentStatus: 'success',
+        );
+        SignupSession.clear();
+      } else {
+        debugPrint('[PaymentScreen] Normal flow — creating policy for quoteId=${widget.args.quoteId}');
+        await ApiService.createPolicy(
+          widget.args.quoteId,
+          'direct',
+          paymentReferenceId: _razorpayPaymentId,
+          paymentStatus: 'success',
+        );
+      }
+      debugPrint('[PaymentScreen] Policy created, refreshing state');
       await _refreshAppState();
     } on ApiException catch (e) {
+      debugPrint('[PaymentScreen] ApiException in _createPolicy: ${e.errorCode} — ${e.message}');
       setState(() {
         _state = _FlowState.policyFailed;
         _errorMessage = _friendlyPolicyError(e.errorCode, e.message);
       });
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[PaymentScreen] Unexpected error in _createPolicy: $e');
       setState(() {
         _state = _FlowState.policyFailed;
-        _errorMessage =
-            'Could not reach server. Your payment was received — tap retry.';
+        _errorMessage = 'Could not reach server. Your payment was received — tap retry.';
       });
     }
   }

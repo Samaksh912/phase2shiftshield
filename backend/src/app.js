@@ -108,6 +108,21 @@ function buildApp(overrides = {}) {
 
   app.use("/api/auth", buildAuthRouter({ authService }));
   app.use("/api/cities", buildCitiesRouter({ citiesService }));
+
+  // Public quote preview — no auth required (used by signup flow before account creation)
+  app.post("/api/quotes/preview", async (req, res, next) => {
+    try {
+      const response = await quoteService.previewQuote({
+        zoneId: req.body?.zone_id,
+        shiftsCovered: req.body?.shifts_covered,
+        weekStart: req.body?.week_start,
+      });
+      return res.status(200).json(response);
+    } catch (error) {
+      return next(error);
+    }
+  });
+
   app.use("/api/quotes", authMiddleware(), buildQuotesRouter({ quoteService }));
   app.use("/api/policies", authMiddleware(), buildPoliciesRouter({ policyService }));
   app.use("/api/claims", authMiddleware(), buildClaimsRouter({ claimsReadService }));

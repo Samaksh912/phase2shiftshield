@@ -57,6 +57,85 @@ class QuoteService {
     };
   }
 
+  async previewQuote({ zoneId, shiftsCovered, weekStart }) {
+    const now = this.nowProvider();
+
+    if (!weekStart || !/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) {
+      const error = new Error("week_start must be provided in YYYY-MM-DD format");
+      error.statusCode = 400; error.code = "validation_error";
+      throw error;
+    }
+    if (!isMonday(weekStart)) {
+      const error = new Error("week_start must be a Monday");
+      error.statusCode = 400; error.code = "validation_error";
+      throw error;
+    }
+    if (!zoneId) {
+      const error = new Error("zone_id is required");
+      error.statusCode = 400; error.code = "validation_error";
+      throw error;
+    }
+
+    const zone = await this.dataStore.getZoneById(zoneId);
+    if (!zone) {
+      const error = new Error("Zone not found");
+      error.statusCode = 404; error.code = "not_found";
+      throw error;
+    }
+
+    const shifts = shiftsCovered || "both";
+    const lunchBaseline = zone.avg_lunch_earnings;
+    const dinnerBaseline = zone.avg_dinner_earnings;
+
+    const recentTriggerSinceIso = new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000).toISOString();
+    const activeDisruptionSinceIso = new Date(now.getTime() - 2 * 60 * 60 * 1000).toISOString();
+
+    const [recentTriggerCount, hasActiveDisruption, forecastOverride] = await Promise.all([
+      this.dataStore.countRecentTriggers(zone.id, recentTriggerSinceIso),
+      this.dataStore.hasActiveDisruption(zone.id, activeDisruptionSinceIso),
+      this.weatherService.fetchWeeklyForecastSummary(zone)
+    ]);
+
+    const mlQuote = await this.mlClient.predictPremium({
+      zone_id: zone.id,
+      week_start: weekStart,
+      shift_type: shifts,
+      earnings_baseline_lunch: lunchBaseline,
+      earnings_baseline_dinner: dinnerBaseline,
+      recent_trigger_count: recentTriggerCount,
+      forecast_override: forecastOverride
+    });
+
+    const explanation = this.normalizeExplanation(mlQuote.explanation);
+    const purchaseDeadline = getPurchaseDeadline(weekStart);
+    const weekEnd = getWeekEnd(weekStart);
+    const canPurchase = isBeforeDeadline(purchaseDeadline, now) && !hasActiveDisruption;
+    const mockRider = { shifts_covered: shifts, lunch_baseline: lunchBaseline, dinner_baseline: dinnerBaseline };
+    const coverageBreakdown = this.buildCoverageBreakdown(mockRider);
+
+    return {
+      quote: {
+        id: null,
+        zone_id: zone.id,
+        zone_name: zone.name,
+        week_start: weekStart,
+        week_end: weekEnd,
+        shifts_covered: shifts,
+        risk_score: mlQuote.risk_score,
+        risk_band: mlQuote.risk_band,
+        premium: mlQuote.premium,
+        payout_cap: mlQuote.payout_cap,
+        lunch_shift_max_payout: mlQuote.lunch_shift_max_payout,
+        dinner_shift_max_payout: mlQuote.dinner_shift_max_payout,
+        explanation,
+        coverage_breakdown: coverageBreakdown,
+        can_purchase: canPurchase,
+        purchase_deadline: purchaseDeadline,
+        generated_at: getCurrentISTTimestamp()
+      }
+    };
+  }
+
   async generateQuote({ riderId, weekStart }) {
     const now = this.nowProvider();
 

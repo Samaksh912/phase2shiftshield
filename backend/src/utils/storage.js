@@ -800,6 +800,23 @@ class LocalDataStore {
   async listPolicyHistoryByRiderId(riderId, options) {
     return this.listPoliciesByRiderId(riderId, options);
   }
+
+  async deleteRiderAccount(riderId) {
+    const store = this.readStore();
+    const rider = store.riders.find((r) => r.id === riderId);
+    if (!rider) return;
+
+    const walletIds = store.wallets.filter((w) => w.rider_id === riderId).map((w) => w.id);
+    store.wallet_transactions = store.wallet_transactions.filter((t) => !walletIds.includes(t.wallet_id));
+    store.wallets = store.wallets.filter((w) => w.rider_id !== riderId);
+    store.notifications = store.notifications.filter((n) => n.rider_id !== riderId);
+    store.claims = (store.claims || []).filter((c) => c.rider_id !== riderId);
+    store.weekly_policies = store.weekly_policies.filter((p) => p.rider_id !== riderId);
+    store.policy_quotes = store.policy_quotes.filter((q) => q.rider_id !== riderId);
+    store.mock_platform_riders = store.mock_platform_riders.filter((p) => p.phone !== rider.phone);
+    store.riders = store.riders.filter((r) => r.id !== riderId);
+    this.writeStore(store);
+  }
 }
 
 class SupabaseDataStore {
@@ -1405,6 +1422,25 @@ class SupabaseDataStore {
 
   async listPolicyHistoryByRiderId(riderId, options) {
     return this.listPoliciesByRiderId(riderId, options);
+  }
+
+  async deleteRiderAccount(riderId) {
+    const { data: rider } = await this.client.from("riders").select("phone").eq("id", riderId).maybeSingle();
+    if (!rider) return;
+
+    const { data: wallets } = await this.client.from("wallets").select("id").eq("rider_id", riderId);
+    const walletIds = (wallets || []).map((w) => w.id);
+    if (walletIds.length > 0) {
+      await this.client.from("wallet_transactions").delete().in("wallet_id", walletIds);
+    }
+
+    await this.client.from("wallets").delete().eq("rider_id", riderId);
+    await this.client.from("notifications").delete().eq("rider_id", riderId);
+    await this.client.from("claims").delete().eq("rider_id", riderId);
+    await this.client.from("weekly_policies").delete().eq("rider_id", riderId);
+    await this.client.from("policy_quotes").delete().eq("rider_id", riderId);
+    await this.client.from("mock_platform_riders").delete().eq("phone", rider.phone);
+    await this.client.from("riders").delete().eq("id", riderId);
   }
 }
 
