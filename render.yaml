@@ -15,8 +15,9 @@ services:
         value: production
       - key: JWT_SECRET
         generateValue: true
-      - key: ML_SERVICE_URL
-        value: https://shiftshield-ml.onrender.com
+      # ML_SERVICE_URL no longer needed — ML is now inline (see ml-client.js + ml-inline.js)
+      # - key: ML_SERVICE_URL
+      #   value: https://shiftshield-ml.onrender.com
       # Backend URL: https://shiftshield-backend-5x53.onrender.com
       - key: SUPABASE_URL
         value: https://ntwgaooqahukkngtszzd.supabase.co
@@ -27,15 +28,21 @@ services:
       - key: TWILIO_ACCOUNT_SID
         sync: false
 
-  - type: web
-    name: shiftshield-ml
-    runtime: python
-    rootDir: backend/ml-service
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /health
-    autoDeployTrigger: commit
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.12.4
+  # ── ML service (decommissioned — now runs inline in the backend) ────────────
+  # Kept here for reference. To restore as a separate service:
+  # 1. Uncomment this block
+  # 2. Uncomment ML_SERVICE_URL above
+  # 3. Revert ml-client.js to the HTTP client
+  #
+  # - type: web
+  #   name: shiftshield-ml
+  #   runtime: python
+  #   rootDir: backend/ml-service
+  #   plan: free
+  #   buildCommand: pip install -r requirements.txt
+  #   startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+  #   healthCheckPath: /health
+  #   autoDeployTrigger: commit
+  #   envVars:
+  #     - key: PYTHON_VERSION
+  #       value: 3.12.4
