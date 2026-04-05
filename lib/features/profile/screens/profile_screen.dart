@@ -220,11 +220,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               zones: _zones,
                               isLocked: _hasActivePolicy,
                               onZoneChanged: (newZoneId) {
+                                final newZone = _zones.firstWhere(
+                                  (z) => z['id'] == newZoneId,
+                                  orElse: () => <String, dynamic>{},
+                                );
                                 setState(() {
                                   _rider['zone_id'] = newZoneId;
-                                  _rider['zone_name'] = _zones.firstWhere(
-                                    (z) => z['id'] == newZoneId,
-                                  )['name'];
+                                  _rider['zone_name'] = newZone['name'] ?? '';
+                                  if (newZone.isNotEmpty) {
+                                    _baselines = {
+                                      'lunch': newZone['avg_lunch_earnings'] ?? 0,
+                                      'dinner': newZone['avg_dinner_earnings'] ?? 0,
+                                    };
+                                  }
                                 });
                               },
                             )

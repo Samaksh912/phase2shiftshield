@@ -411,7 +411,6 @@ class AuthService {
 
     if (payoutPreference === "wallet") {
       await this.dataStore.createWallet({
-        id: `wallet-${rider.id}`,
         rider_id: rider.id,
         balance: 0,
         updated_at: timestamp

@@ -394,7 +394,15 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildSectionLabel('Lunch Baseline'),
+                                Row(
+                                  children: [
+                                    Expanded(child: _buildSectionLabel('Lunch Baseline')),
+                                    GestureDetector(
+                                      onTap: () => _showBaselineInfo(context, 'lunch'),
+                                      child: Icon(Icons.info_outline, size: 16, color: context.colors.primary),
+                                    ),
+                                  ],
+                                ),
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.baseline,
                                   textBaseline: TextBaseline.alphabetic,
@@ -427,7 +435,15 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildSectionLabel('Dinner Baseline'),
+                                Row(
+                                  children: [
+                                    Expanded(child: _buildSectionLabel('Dinner Baseline')),
+                                    GestureDetector(
+                                      onTap: () => _showBaselineInfo(context, 'dinner'),
+                                      child: Icon(Icons.info_outline, size: 16, color: context.colors.primary),
+                                    ),
+                                  ],
+                                ),
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.baseline,
                                   textBaseline: TextBaseline.alphabetic,
@@ -530,6 +546,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                                     ),
                                   ],
                                 ),
+                                if (_payoutMode == PayoutMode.upi) ...[
                                 SizedBox(height: 16),
                                 Text(
                                   'UPI IDENTITY',
@@ -570,6 +587,7 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                                     ],
                                   ),
                                 ),
+                                ],
                               ],
                             ),
                           ),
@@ -800,6 +818,70 @@ class _RiderProfileScreenState extends State<RiderProfileScreen> {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBaselineInfo(BuildContext context, String shift) {
+    final isLunch = shift == 'lunch';
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.colors.surfaceContainer,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.trending_up, color: context.colors.primary, size: 20),
+            SizedBox(width: 8),
+            Text(
+              '${isLunch ? 'Lunch' : 'Dinner'} Baseline',
+              style: GoogleFonts.spaceGrotesk(
+                color: context.colors.onSurface,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Your guaranteed minimum payout per protected ${isLunch ? 'lunch' : 'dinner'} shift.',
+              style: GoogleFonts.manrope(color: context.colors.onSurface, fontSize: 14, height: 1.5),
+            ),
+            SizedBox(height: 12),
+            Text('How it affects your coverage:', style: GoogleFonts.manrope(color: context.colors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            _infoPoint(context, 'Sets the floor for insurance payouts on triggered claims'),
+            _infoPoint(context, 'Pre-filled from your zone\'s average — adjust if your actual earnings differ'),
+            _infoPoint(context, 'Higher baseline = higher potential claim payout'),
+            _infoPoint(context, 'Misrepresenting this may affect claim eligibility'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Got it', style: GoogleFonts.manrope(color: context.colors.primary, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoPoint(BuildContext context, String text) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.circle, size: 5, color: context.colors.primary),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(text, style: GoogleFonts.manrope(color: context.colors.onSurfaceVariant, fontSize: 12, height: 1.4)),
           ),
         ],
       ),
